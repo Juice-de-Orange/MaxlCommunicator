@@ -1,0 +1,110 @@
+{
+  "$comment": [
+    "Radio payload encodings. Shared between the firmware (C++) and the phone",
+    "bridge (TypeScript), because docs/bridge-protocol.md 4 hands EVT_FRAME_RX",
+    "the radio payload verbatim -- so both sides parse exactly these bytes.",
+    "",
+    "Authored by hand from the spec, not generated from either implementation.",
+    "A generator would bake one side's bugs into the vectors and the cross-check",
+    "would prove nothing. Every vector carries a per-field breakdown so it can be",
+    "audited against the spec by reading, without running anything."
+  ],
+  "spec": "CLAUDE.md 2.2",
+  "encoding": "fixed-width binary, little endian",
+  "groups": [
+    {
+      "type": "POSITION",
+      "layout": "lat i32 (deg x 1e7) | lon i32 | alt i16 (m) | hdop u8 | fixAge u8",
+      "length": 12,
+      "vectors": [
+        {
+          "name": "position_innsbruck",
+          "note": "ordinary northern/eastern fix, positive everything",
+          "fields": { "latitudeE7": 472692000, "longitudeE7": 114041000, "altitudeM": 574, "hdop": 12, "fixAgeS": 3 },
+          "breakdown": { "lat": "20b52c1c", "lon": "a820cc06", "alt": "3e02", "hdop": "0c", "fixAge": "03" },
+          "bytes": "20b52c1ca820cc063e020c03"
+        },
+        {
+          "name": "position_southern_negative",
+          "note": "southern and western hemisphere plus altitude below sea level -- three separate sign conversions, which is where a hand-rolled codec goes wrong",
+          "fields": { "latitudeE7": -338688000, "longitudeE7": -1732090000, "altitudeM": -15, "hdop": 31, "fixAgeS": 250 },
+          "breakdown": { "lat": "0008d0eb", "lon": "7067c298", "alt": "f1ff", "hdop": "1f", "fixAge": "fa" },
+          "bytes": "0008d0eb7067c298f1ff1ffa"
+        },
+        {
+          "name": "position_zero",
+          "note": "null island with no fix; the all-zero frame must round-trip like any other",
+          "fields": { "latitudeE7": 0, "longitudeE7": 0, "altitudeM": 0, "hdop": 0, "fixAgeS": 0 },
+          "breakdown": { "lat": "00000000", "lon": "00000000", "alt": "0000", "hdop": "00", "fixAge": "00" },
+          "bytes": "000000000000000000000000"
+        }
+      ]
+    },
+    {
+      "type": "TELEMETRY",
+      "layout": "tempC i16 (0.01 C) | humidity u16 (0.01 %) | pressure u32 (Pa) | battery u16 (mV) | uptime u32 (s)",
+      "length": 14,
+      "vectors": [
+        {
+          "name": "telemetry_typical",
+          "note": "21.35 C, 48.20 %RH, 952.30 hPa, 3.987 V, one day of uptime",
+          "fields": { "temperatureCentiC": 2135, "humidityCentiPercent": 4820, "pressurePa": 95230, "batteryMv": 3987, "uptimeS": 86400 },
+          "breakdown": { "temp": "5708", "humidity": "d412", "pressure": "fe730100", "battery": "930f", "uptime": "80510100" },
+          "bytes": "5708d412fe730100930f80510100"
+        },
+        {
+          "name": "telemetry_freezing",
+          "note": "-12.75 C exercises the only signed field, and uptime at u32 max exercises the widest one",
+          "fields": { "temperatureCentiC": -1275, "humidityCentiPercent": 9155, "pressurePa": 101325, "batteryMv": 3312, "uptimeS": 4294967295 },
+          "breakdown": { "temp": "05fb", "humidity": "c323", "pressure": "cd8b0100", "battery": "f00c", "uptime": "ffffffff" },
+          "bytes": "05fbc323cd8b0100f00cffffffff"
+        }
+      ]
+    },
+    {
+      "type": "ACK",
+      "layout": "seq u8 | rssi i16 | snr i8",
+      "length": 4,
+      "vectors": [
+        {
+          "name": "ack_typical",
+          "note": "-97 dBm, +7 dB SNR -- a healthy link at the rendezvous configuration",
+          "fields": { "seq": 42, "rssiDbm": -97, "snrDb": 7 },
+          "breakdown": { "seq": "2a", "rssi": "9fff", "snr": "07" },
+          "bytes": "2a9fff07"
+        },
+        {
+          "name": "ack_weak_link",
+          "note": "negative SNR below the demodulation floor, and seq at its wrap point. This is the input that drives SF escalation in CLAUDE.md 2.5",
+          "fields": { "seq": 255, "rssiDbm": -128, "snrDb": -13 },
+          "breakdown": { "seq": "ff", "rssi": "80ff", "snr": "f3" },
+          "bytes": "ff80fff3"
+        }
+      ]
+    },
+    {
+      "type": "TEXT",
+      "layout": "UTF-8, max 48 bytes, no null terminator",
+      "vectors": [
+        {
+          "name": "text_ascii",
+          "note": "10 bytes, 10 characters",
+          "fields": { "text": "Hallo Welt" },
+          "bytes": "48616c6c6f2057656c74"
+        },
+        {
+          "name": "text_utf8_umlaut",
+          "note": "14 characters but 16 bytes -- the limit in CLAUDE.md 2.2 is bytes, not characters, and a client that truncates by character will overrun it",
+          "fields": { "text": "Grüße vom Berg" },
+          "bytes": "4772c3bcc39f6520766f6d2042657267"
+        },
+        {
+          "name": "text_max_48",
+          "note": "exactly at the limit; 49 must be rejected",
+          "fields": { "text": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" },
+          "bytes": "414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141"
+        }
+      ]
+    }
+  ]
+}

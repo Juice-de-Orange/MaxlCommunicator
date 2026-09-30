@@ -1,0 +1,18 @@
+{
+  "name": "tinycrypt",
+  "version": "0.2.8",
+  "description": "AES-128 and AES-CCM from tinycrypt, vendored for the radio link layer (CLAUDE.md 2.1, decision D4). Only the CCM path is included: aes_encrypt, ccm_mode and utils. CCM is CTR plus CBC-MAC, so AES decryption is never used and aes_decrypt.c is deliberately absent.",
+  "keywords": ["crypto", "aes", "ccm"],
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zephyrproject-rtos/tinycrypt"
+  },
+  "frameworks": "*",
+  "platforms": "*",
+  "build": {
+    "srcDir": "src",
+    "includeDir": "include",
+    "flags": ["-std=c11"]
+  }
+}

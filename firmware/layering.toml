@@ -1,0 +1,37 @@
+# Layer policy for the firmware.
+#
+# CLAUDE.md 3 requires strict layering: a lower layer never calls into a higher
+# one. docs/decisions/0001-open-decisions.md D3 fixes the exact permission matrix
+# and explains the two seams that make it work -- IRadioLink and IBlockStore live
+# in hal/, so link/ depends on an interface rather than on RadioLib.
+#
+# scripts/check_layering.py reads this file. Keeping the matrix as data rather
+# than as code means the policy is reviewable without reading the checker.
+
+[layers]
+# Directory under src/ -> the layer it belongs to. Files directly in src/ are
+# the application entry point and are checked as "root".
+hal = "hal"
+link = "link"
+ble = "ble"
+ui = "ui"
+app = "app"
+
+# Phase 0 bring-up sketches wire peripherals together directly, exactly as the
+# application entry point does, so they are checked as root rather than as a
+# layer of their own. Spelled out because the checker would otherwise fall back
+# to root silently, and a silent default is not a policy.
+bringup = "root"
+
+# May a file in <key> include a file from one of <value>?
+# Every layer may include itself; that is implied and not repeated here.
+[allowed]
+hal = []
+link = ["hal"]
+ble = ["hal"]
+ui = ["hal"]
+app = ["hal", "link", "ble", "ui"]
+
+# src/main.cpp and anything beside it wires the layers together, so it may see
+# all of them. It is the one place that is allowed to.
+root = ["hal", "link", "ble", "ui", "app"]

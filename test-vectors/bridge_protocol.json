@@ -1,0 +1,116 @@
+{
+  "$comment": [
+    "The phone-to-device protocol, shared between the firmware (C++, src/ble/) and the",
+    "bridge (TypeScript, bridge/src/protocol/). docs/bridge-protocol.md is normative and",
+    "client-independent; these vectors are what makes 'both sides implement the same",
+    "document' checkable rather than hoped for.",
+    "",
+    "Authored by hand from the specification. Not generated from either implementation --",
+    "a generator would bake one side's mistakes into the vectors and the cross-check would",
+    "prove nothing. Every vector carries the field breakdown it was built from, so it can",
+    "be audited against the spec by reading."
+  ],
+  "spec": "docs/bridge-protocol.md",
+  "groups": [
+    {
+      "section": "1.1 chunking",
+      "layout": "byte 0: F(0x80) | L(0x40) | msgId(0x3F) | byte 1: chunkIndex | byte 2..: fragment",
+      "fragmentBytes": "MTU - 3 - 2, i.e. the ATT header and the two-byte chunk header",
+      "cases": [
+        {
+          "name_prefix": "chunk_single",
+          "note": "A GET_INFO command at the negotiated MTU. Both F and L set, chunkIndex 0 -- the single-chunk form from 1.1.",
+          "mtu": 247,
+          "msgId": 5,
+          "chunkCount": 1,
+          "vectors": [
+            { "name": "chunk_single_message", "note": "opcode 0x01 GET_INFO, txnId 0x2A, empty body", "bytes": "012a" },
+            { "name": "chunk_single_c0", "note": "flags 0xC5 = F|L|msgId 5", "bytes": "c500012a" }
+          ]
+        },
+        {
+          "name_prefix": "chunk_three",
+          "note": "SEND_TEXT at the 23-byte minimum MTU, which leaves 18 bytes per fragment. Three chunks: F on the first, L on the last, neither on the middle one.",
+          "mtu": 23,
+          "msgId": 9,
+          "chunkCount": 3,
+          "message_fields": {
+            "opcode": "0x03 SEND_TEXT",
+            "txnId": 7,
+            "dst": 2,
+            "len": 34,
+            "text": "Treffpunkt Bergstation um 14 Uhr30"
+          },
+          "vectors": [
+            { "name": "chunk_three_message", "bytes": "0307020022547265666670756e6b74204265726773746174696f6e20756d203134205568723330" },
+            { "name": "chunk_three_c0", "note": "flags 0x89 = F|msgId 9", "bytes": "89000307020022547265666670756e6b74204265" },
+            { "name": "chunk_three_c1", "note": "flags 0x09 = msgId 9, neither first nor last", "bytes": "0901726773746174696f6e20756d203134205568" },
+            { "name": "chunk_three_c2", "note": "flags 0x49 = L|msgId 9", "bytes": "4902723330" }
+          ]
+        }
+      ]
+    },
+    {
+      "section": "1.2 message layer and 4 events",
+      "layout": "byte 0: opcode | byte 1: txnId | byte 2..: body",
+      "vectors": [
+        {
+          "name": "rsp_err_not_authorised",
+          "note": "PROVISION_KEY attempted on an unbonded connection. RSP_ERR echoes the txnId and names the opcode that failed. Section 2: it must not silently no-op -- that is how a network key ends up settable by anyone in Bluetooth range.",
+          "fields": { "opcode": "0xC1 RSP_ERR", "txnId": 17, "failedOpcode": "0x0A PROVISION_KEY", "error": "0x04 ERR_NOT_AUTHORISED" },
+          "bytes": "c1110a04"
+        },
+        {
+          "name": "evt_budget",
+          "note": "EVT_BUDGET. txnId 0 because events are unsolicited (1.2). limitMs 360000 is the g3 allowance from CLAUDE.md 1.3; nextTxUnix is what the UI turns into 'queued until HH:MM'.",
+          "fields": { "opcode": "0x87 EVT_BUDGET", "txnId": 0, "band": 0, "usedMs": 42500, "limitMs": 360000, "nextTxUnix": 1788003600 },
+          "bytes": "87000004a60000407e050010c5926a"
+        },
+        {
+          "name": "evt_frame_tx_result",
+          "note": "result 1 = undelivered after 4 attempts. Section 4: state 2 (queued) may later be followed by 0 or 1 for the same counter, so both the phone and the server treat the journal as a log of state transitions, not a set of final outcomes.",
+          "fields": { "opcode": "0x82 EVT_FRAME_TX_RESULT", "txnId": 0, "counter": 1024, "dst": 2, "seq": 3, "result": 1, "attempts": 4, "rssi": -97, "snr": 7 },
+          "bytes": "82000004000002000301049fff07"
+        },
+        {
+          "name": "evt_journal_wrapping_tx_result",
+          "note": "EVT_JOURNAL (D15). The same EVT_FRAME_TX_RESULT body as above, delivered out of the journal in answer to GET_QUEUE and therefore wrapped in its journal counter. The two counters are deliberately different: 4098 identifies the journal ENTRY, 1024 the FRAME it reports on. D10 turns on exactly that distinction, and a decoder that reads the frame counter as the journal counter passes every other vector in this file.",
+          "fields": { "opcode": "0x88 EVT_JOURNAL", "txnId": 0, "counter": 4098, "wrappedOpcode": "0x82 EVT_FRAME_TX_RESULT", "len": 12, "body": "the 12 bytes of evt_frame_tx_result, unchanged" },
+          "bytes": "880002100000820c0004000002000301049fff07"
+        },
+        {
+          "name": "evt_journal_unknown_opcode",
+          "note": "EVT_JOURNAL wrapping an event code no client knows. Section 4 requires it to be STORED and counted towards ACK_QUEUE anyway: the counter is legible even when the body is not, and dropping the entry would free journal space for something nobody ever saw. This is the vector that makes a future event type safe to add.",
+          "fields": { "opcode": "0x88 EVT_JOURNAL", "txnId": 0, "counter": 4099, "wrappedOpcode": "0x8F, undefined on purpose", "len": 3, "body": "aabbcc" },
+          "bytes": "8800031000008f03aabbcc"
+        }
+      ]
+    },
+    {
+      "section": "3 config TLVs",
+      "layout": "type:u8, len:u8, value[len]",
+      "vectors": [
+        {
+          "name": "set_config_body",
+          "note": "A SET_CONFIG body: configVersion u32 followed by a TLV run. The trailing 0xF0 is deliberately not a defined type -- section 3 requires unknown types to be ignored and reported back as unapplied, never to fail the whole write.",
+          "fields": {
+            "configVersion": 7,
+            "tlvs": [
+              { "type": "0x02 sniffIntervalMs", "value": 2000 },
+              { "type": "0x03 band", "value": "0 = g3" },
+              { "type": "0x06 txPowerDbm", "value": 22 },
+              { "type": "0x07 telemetryIntervalS", "value": 600 },
+              { "type": "0xF0 unknown", "value": "beef" }
+            ]
+          },
+          "bytes": "070000000202d00703010006011607025802f002beef"
+        },
+        {
+          "name": "set_config_tlv_run",
+          "note": "the same TLV run without the leading configVersion, for decoders tested in isolation",
+          "bytes": "0202d00703010006011607025802f002beef"
+        }
+      ]
+    }
+  ]
+}

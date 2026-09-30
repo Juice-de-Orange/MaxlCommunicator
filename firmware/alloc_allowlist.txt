@@ -1,0 +1,10 @@
+# Exceptions to the no-dynamic-allocation rule in link/ and app/ (CLAUDE.md 3).
+#
+# Format: one entry per line, either a bare symbol or "<object path>:<symbol>".
+# Every entry needs a comment saying WHY. An unexplained exception is how this
+# check stops meaning anything.
+#
+# This file is empty, and that is the interesting part: docs/decisions D3 put
+# IRadioLink and IBlockStore in hal/ so that RadioLib's allocations stay below
+# the line. An empty allowlist is the evidence that the layering was cut in the
+# right place.

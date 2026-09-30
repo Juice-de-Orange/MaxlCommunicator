@@ -1,0 +1,45 @@
+{
+  "$comment": [
+    "A REGRESSION FIXTURE, not a known-answer test.",
+    "",
+    "The expected bytes were produced by this implementation, so they prove nothing about",
+    "the correctness of AES-CCM -- that is what test-vectors/aes_ccm_rfc3610.json is for,",
+    "and RFC 3610 carries no vectors with a 4-byte tag.",
+    "",
+    "What this pins is the FRAME CONSTRUCTION around the cipher: the nonce layout, the",
+    "choice of the 12-byte header as AAD, and the truncation of the tag to 4 bytes. Any of",
+    "those changing is a wire format change, and docs/versioning-and-updates.md 1 requires a",
+    "`ver` bump and both nodes flashed in one session. A silent change here would produce",
+    "two nodes that cannot hear each other and a MIC failure indistinguishable from a wrong",
+    "key -- which is exactly the evening that document exists to save."
+  ],
+  "spec": "CLAUDE.md 2.1",
+  "inputs": {
+    "key": "00112233445566778899aabbccddeeff",
+    "header": {
+      "bytes": "1407010002002a0000001101",
+      "fields": {
+        "version": 1,
+        "type": "POSITION (4)",
+        "netId": 7,
+        "src": 1,
+        "dst": 2,
+        "counter": 42,
+        "seq": 17,
+        "flags": "ACK_REQ"
+      }
+    },
+    "nonce": {
+      "bytes": "01002a00000000000000000000",
+      "note": "derived, not transmitted: src little endian, then counter little endian, then seven zero bytes"
+    },
+    "plaintext": "0102030405060708090a0b0c"
+  },
+  "vectors": [
+    {
+      "name": "frame_ccm_regression",
+      "note": "ciphertext (12 bytes) followed by the 4-byte MIC",
+      "bytes": "a571ee3d4a975e84f6a82006d1d3f7c7"
+    }
+  ]
+}
