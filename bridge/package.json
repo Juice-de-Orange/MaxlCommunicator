@@ -1,0 +1,27 @@
+{
+  "name": "maxl-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phone bridge for the MaxlCommunicator LoRa node. An implementation of docs/bridge-protocol.md, which is normative and client-independent.",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^22.10.2",
+    "@types/web-bluetooth": "^0.0.21",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}

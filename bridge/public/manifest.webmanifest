@@ -1,0 +1,13 @@
+{
+  "name": "MaxlCommunicator",
+  "short_name": "Maxl",
+  "description": "Bridge between a T-Echo node and the dashboard. Syncs in the foreground; background sync is not possible on this platform.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f9f9f7",
+  "theme_color": "#1a1a19",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
