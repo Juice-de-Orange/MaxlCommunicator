@@ -26,6 +26,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 2
+    ignore:
+      # CLAUDE.md §0.1 pins Node 22 LTS (Astro 7 needs >= 22); a major bump is a
+      # deliberate decision, not a weekly update.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
