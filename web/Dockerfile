@@ -27,7 +27,7 @@
 # The wasm fallback is not in the lock either, because it was never needed where
 # the lock was written. Regenerating the lock inside the image would fix the
 # symptom and throw away the reproducibility that `npm ci` is for.
-FROM node:22-slim AS bridge-build
+FROM node:26-slim AS bridge-build
 WORKDIR /src/bridge
 # npm's defaults give up quickly on a slow registry, and the failure it reports
 # is ETIMEDOUT with a paragraph about proxy settings -- which sends you looking
@@ -52,7 +52,7 @@ COPY bridge/ ./
 RUN npm run build
 
 
-FROM node:22-slim AS web-build
+FROM node:26-slim AS web-build
 WORKDIR /src/web
 # npm's defaults give up quickly on a slow registry, and the failure it reports
 # is ETIMEDOUT with a paragraph about proxy settings -- which sends you looking
@@ -91,7 +91,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 
-FROM node:22-slim AS runtime
+FROM node:26-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
