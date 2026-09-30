@@ -1,0 +1,19 @@
+# The build context is the repository root, because web/ imports bridge/src.
+# Everything that is not a source file of those two stays out -- the firmware
+# tree alone carries a PlatformIO cache measured in hundreds of megabytes.
+
+.git
+.venv
+**/node_modules
+**/dist
+**/.pio
+**/.astro
+firmware
+docs
+tools
+test-vectors
+web/public/app
+**/.env
+**/.env.*
+!**/.env.example
+*.log

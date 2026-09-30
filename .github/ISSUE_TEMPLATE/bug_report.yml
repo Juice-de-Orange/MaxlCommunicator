@@ -1,0 +1,43 @@
+name: Bug report
+description: Something does not work as specified or documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Security problems go through private reporting instead
+        (Security → Report a vulnerability). Please remove keys, tokens, board serials and
+        real coordinates from anything you paste.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - firmware / radio link
+        - firmware / UI, sensors, power
+        - PWA bridge
+        - Android client
+        - dashboard
+        - docs
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup
+      description: Commit / firmware build, number of boards, band and SF, phone and browser if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (redacted)
+      description: Serial output, test output or dashboard logs.
+      render: shell

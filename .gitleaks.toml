@@ -1,0 +1,7 @@
+# gitleaks configuration: the default rules plus one documented false positive.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "AES-CCM regression fixture: the key is the byte sequence 00 11 22 .. FF, not a secret"
+paths = ['''test-vectors/frame_crypto\.json''']

@@ -1,0 +1,110 @@
+# ── Firmware build ───────────────────────────────────────────────────────────
+.pio/
+# Host test build. Anchored UNDER firmware/test/, because an unanchored build/
+# would later swallow every directory of that name.
+/firmware/test/build/
+.pioenvs/
+.piolibdeps/
+compile_commands.json
+*.o
+*.a
+*.elf
+*.hex
+*.bin
+*.uf2
+*.map
+*.lst
+*.su
+# DFU packages can contain an image with the development key
+*.dfu.zip
+
+# ── Node / Web / PWA ─────────────────────────────────────────────────────────
+node_modules/
+.astro/
+.vite/
+.output/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.npm/
+.pnpm-store/
+# ANCHORED: an unanchored test-results/ would swallow docs/test-results/
+# - i.e. exactly the compliance evidence from docs/test-plan.md.
+/bridge/test-results/
+/bridge/playwright-report/
+/web/test-results/
+/web/playwright-report/
+
+# ── Secrets: anything that could carry a network key ────────────────────────
+# CLAUDE.md 6: "No secrets in the repository. Keys are provisioned at runtime."
+# The development key comes exclusively from the environment variable
+# MAXL_DEV_KEY and is never written to a file.
+.env
+.env.*
+!.env.example
+secrets.*
+.mcp.json
+# Release-preparation notes of the maintainer; never part of the repository.
+.opensource/
+*.key
+*.pem
+*.p12
+*.pfx
+keys/
+.secrets/
+**/secrets.h
+**/secrets.json
+*dev_key*
+*devkey*
+*netkey*
+provisioning/
+# Exception: the build scripts themselves carry no key material - they only read
+# the key from the environment. Without this line *dev_key* would swallow the script.
+!firmware/scripts/*.py
+# Serial captures can contain provisioned keys, bonding data or passkeys.
+# Deliberately addable with `git add -f`, after they have been read.
+docs/test-results/raw/
+logs/
+*.log
+serial-*.txt
+*.pcap
+*.pcapng
+*.sigmf-data
+*.sigmf-meta
+
+# ── Database / deployment (from phase 7) ─────────────────────────────────────
+web/pgdata/
+backups/
+*.dump
+*.sql.gz
+docker-compose.override.yml
+
+# ── Local machine configuration ──────────────────────────────────────────────
+firmware/platformio.local.ini
+firmware/nodes.local.ini
+firmware/nodes.ini
+.venv/
+venv/
+# Python bytecode of the guard scripts
+__pycache__/
+*.pyc
+__pycache__/
+*.pyc
+.vscode/
+!.vscode/extensions.json
+.idea/
+.claude/settings.local.json
+CLAUDE.local.md
+
+# ── OS clutter ───────────────────────────────────────────────────────────────
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# The PWA is built into the dashboard's public tree; it is not a source file.
+web/public/app/
+
+# Kotlin/Gradle build output (Phase 9)
+android/**/build/
+android/.gradle/
