@@ -1,0 +1,60 @@
+---
+import Shell from "../layouts/Shell.astro";
+import { allMessages } from "../lib/queries";
+import { absoluteTime, MESSAGE_STATE_CLASS, MESSAGE_STATE_LABEL } from "../lib/format";
+
+export const prerender = false;
+
+const rows = await allMessages(300);
+---
+
+<Shell
+  title="Messages"
+  subtitle="The state is the latest transition in the journal, not a final outcome — a waiting message can still be delivered."
+>
+  {
+    rows.length === 0 ? (
+      <p class="text-sm text-ink-secondary">No messages yet.</p>
+    ) : (
+      <table class="w-full text-left text-sm">
+        <thead class="text-xs text-ink-muted">
+          <tr>
+            <th class="pb-2 font-normal">Time</th>
+            <th class="pb-2 font-normal">Node</th>
+            <th class="pb-2 font-normal">Direction</th>
+            <th class="pb-2 font-normal">Peer</th>
+            <th class="pb-2 font-normal">Content</th>
+            <th class="pb-2 font-normal">Radio</th>
+            <th class="pb-2 font-normal">State</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ message, nodeId, nodeName }) => (
+            <tr class="border-t border-hairline align-top">
+              <td class="tabular whitespace-nowrap py-2 text-ink-secondary">
+                {absoluteTime(message.occurredAt)}
+              </td>
+              <td class="py-2">
+                <a href={`/nodes/${nodeId}`} class="hover:text-[color:var(--color-series-1)]">
+                  {nodeName}
+                </a>
+              </td>
+              <td class="py-2 text-ink-secondary">{message.direction === "rx" ? "in" : "out"}</td>
+              <td class="tabular py-2">{message.peerNodeId ?? "—"}</td>
+              <td class="py-2">
+                {message.text ?? <span class="text-ink-muted">no content in the journal (D10)</span>}
+              </td>
+              <td class="tabular py-2 text-ink-secondary">
+                {message.rssi ? `${message.rssi} dBm` : "—"}
+                {message.snr != null && message.snr !== 0 && <span> · {message.snr} dB</span>}
+              </td>
+              <td class={`whitespace-nowrap py-2 ${MESSAGE_STATE_CLASS[message.state] ?? ""}`}>
+                {MESSAGE_STATE_LABEL[message.state] ?? message.state}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+</Shell>

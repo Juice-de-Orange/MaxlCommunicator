@@ -1,0 +1,195 @@
+---
+/*
+ * CLAUDE.md 2.3 is explicit about this page: "The dashboard must show this
+ * table, not a vague 'latency vs. battery' note."
+ *
+ * The reason it insists is in the numbers. The sniff interval is the single
+ * tuning knob, and it trades latency against battery *and airtime at once* --
+ * the SF12 rows at short intervals are a receiver that is effectively always on,
+ * which alone misses a two-week target on an 800 mAh cell. A note saying
+ * "shorter is faster but uses more power" hides exactly the part that decides
+ * the design.
+ *
+ * These are constants from the specification, not measurements. Everything here
+ * is recomputed and re-recorded when phase 2 produces real numbers.
+ */
+import Shell from "../layouts/Shell.astro";
+
+export const prerender = false;
+
+const sniff = [
+  { sf: "SF9", interval: "0.5 s", preamble: "123 sym", airtime: "697 ms", perHour: 516, rx: "0.77 mA" },
+  { sf: "SF9", interval: "2 s", preamble: "489 sym", airtime: "2196 ms", perHour: 163, rx: "0.21 mA", isDefault: true },
+  { sf: "SF9", interval: "5 s", preamble: "1221 sym", airtime: "5195 ms", perHour: 69, rx: "0.09 mA" },
+  { sf: "SF12", interval: "1 s", preamble: "31 sym", airtime: "2400 ms", perHour: 149, rx: "4.21 mA" },
+  { sf: "SF12", interval: "5 s", preamble: "153 sym", airtime: "6398 ms", perHour: 56, rx: "0.86 mA" },
+];
+
+const airtime = [
+  { frame: "ACK (20 B)", sf7: "57 ms", sf9: "185 ms", sf10: "371 ms", sf12: "1319 ms" },
+  { frame: "POSITION (28 B)", sf7: "67 ms", sf9: "226 ms", sf10: "412 ms", sf12: "1647 ms" },
+  { frame: "TELEMETRY (30 B)", sf7: "72 ms", sf9: "226 ms", sf10: "453 ms", sf12: "1647 ms" },
+  { frame: "TEXT max (64 B)", sf7: "118 ms", sf9: "390 ms", sf10: "698 ms", sf12: "2793 ms" },
+];
+
+const lockout = [
+  { band: "g3 (10 %)", sf7: "0.6 s", sf9: "2.0 s", sf10: "3.7 s", sf12: "14.8 s" },
+  { band: "g1 (1 %)", sf7: "6.6 s", sf9: "22.4 s", sf10: "40.8 s", sf12: "163.0 s" },
+];
+---
+
+<Shell
+  title="Radio"
+  subtitle="Constants from the specification, not measurements. They are recomputed as soon as phase 2 delivers real numbers."
+>
+  <section class="mb-10">
+    <h2 class="mb-2 text-sm font-medium">Band plan</h2>
+    <p class="mb-3 text-xs text-ink-secondary">
+      ETSI EN 300 220-2 V3.3.1. Transmit power is capped per band in code, not by the
+      user — ERP includes antenna gain.
+    </p>
+    <table class="w-full text-left text-sm">
+      <thead class="text-xs text-ink-muted">
+        <tr>
+          <th class="pb-2 font-normal">Sub-band</th>
+          <th class="pb-2 font-normal">Range</th>
+          <th class="pb-2 font-normal">ERP</th>
+          <th class="pb-2 font-normal">Duty cycle</th>
+          <th class="pb-2 font-normal">Airtime/hour</th>
+        </tr>
+      </thead>
+      <tbody class="tabular">
+        <tr class="border-t border-hairline">
+          <td class="py-2">g3 / P — <span class="text-ink-secondary">primary</span></td>
+          <td class="py-2">869.4–869.65 MHz</td>
+          <td class="py-2">500 mW</td>
+          <td class="py-2">10 %</td>
+          <td class="py-2">360 s</td>
+        </tr>
+        <tr class="border-t border-hairline">
+          <td class="py-2">g1 / M — <span class="text-ink-secondary">fallback</span></td>
+          <td class="py-2">868.0–868.6 MHz</td>
+          <td class="py-2">25 mW</td>
+          <td class="py-2">1 %</td>
+          <td class="py-2">36 s</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="mt-3 text-xs text-ink-secondary">
+      Default centre frequency <span class="tabular">869.575 MHz</span>. It deliberately avoids
+      869.525 MHz — that is where every LoRaWAN gateway in range sends its RX2 downlink at
+      high power.
+    </p>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="mb-2 text-sm font-medium">Sniff interval — the single tuning knob</h2>
+    <p class="mb-3 text-xs text-ink-secondary">
+      It trades latency against battery <strong>and airtime at once</strong>. The SF12 rows
+      at short intervals are a receiver that is effectively always on — that alone misses
+      two weeks on an 800 mAh cell. High SF and low latency are mutually exclusive on this
+      hardware.
+    </p>
+    <table class="w-full text-left text-sm">
+      <thead class="text-xs text-ink-muted">
+        <tr>
+          <th class="pb-2 font-normal">SF</th>
+          <th class="pb-2 font-normal">Interval</th>
+          <th class="pb-2 font-normal">Preamble</th>
+          <th class="pb-2 font-normal">Airtime</th>
+          <th class="pb-2 font-normal">Messages/h at 10 %</th>
+          <th class="pb-2 font-normal">RX average</th>
+        </tr>
+      </thead>
+      <tbody class="tabular">
+        {
+          sniff.map((row) => (
+            <tr
+              class:list={[
+                "border-t border-hairline",
+                row.isDefault && "bg-plane",
+              ]}
+            >
+              <td class="py-2">{row.sf}</td>
+              <td class="py-2">
+                {row.interval}
+                {row.isDefault && <span class="ml-2 text-xs text-ink-secondary">default</span>}
+              </td>
+              <td class="py-2 text-ink-secondary">{row.preamble}</td>
+              <td class="py-2">{row.airtime}</td>
+              <td class="py-2">{row.perHour}</td>
+              <td class="py-2">{row.rx}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="mb-2 text-sm font-medium">Airtime per frame</h2>
+    <p class="mb-3 text-xs text-ink-secondary">
+      BW125, CR4/5, explicit header, CRC on, 8-symbol preamble. 12 bytes of header plus 4 bytes
+      of MIC sit on every frame — there is no small frame.
+    </p>
+    <table class="w-full text-left text-sm">
+      <thead class="text-xs text-ink-muted">
+        <tr>
+          <th class="pb-2 font-normal">Frame</th>
+          <th class="pb-2 font-normal">SF7</th>
+          <th class="pb-2 font-normal">SF9</th>
+          <th class="pb-2 font-normal">SF10</th>
+          <th class="pb-2 font-normal">SF12</th>
+        </tr>
+      </thead>
+      <tbody class="tabular">
+        {
+          airtime.map((row) => (
+            <tr class="border-t border-hairline">
+              <td class="py-2">{row.frame}</td>
+              <td class="py-2">{row.sf7}</td>
+              <td class="py-2">{row.sf9}</td>
+              <td class="py-2">{row.sf10}</td>
+              <td class="py-2">{row.sf12}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="mb-2 text-sm font-medium">Lockout after a POSITION frame</h2>
+    <p class="mb-3 text-xs text-ink-secondary">
+      The second of two constraints. Besides the rolling hourly total, every frame is followed
+      by a lockout of <span class="tabular">airtime × (1/duty cycle − 1)</span>, measured from
+      the end of the transmission. The later of the two always wins. Without it the hourly
+      total could be spent as a single block — 163 frames back to back, then 54 minutes of
+      silence. Compliant, and useless as a communicator.
+    </p>
+    <table class="w-full text-left text-sm">
+      <thead class="text-xs text-ink-muted">
+        <tr>
+          <th class="pb-2 font-normal">Band</th>
+          <th class="pb-2 font-normal">SF7</th>
+          <th class="pb-2 font-normal">SF9</th>
+          <th class="pb-2 font-normal">SF10</th>
+          <th class="pb-2 font-normal">SF12</th>
+        </tr>
+      </thead>
+      <tbody class="tabular">
+        {
+          lockout.map((row) => (
+            <tr class="border-t border-hairline">
+              <td class="py-2">{row.band}</td>
+              <td class="py-2">{row.sf7}</td>
+              <td class="py-2">{row.sf9}</td>
+              <td class="py-2">{row.sf10}</td>
+              <td class="py-2">{row.sf12}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </section>
+</Shell>

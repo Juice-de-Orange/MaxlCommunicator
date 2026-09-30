@@ -1,0 +1,61 @@
+# =============================================================================
+# MaxlCommunicator dashboard.
+#
+# Runs anywhere. For a public deployment put a TLS-terminating reverse proxy in
+# front of it -- Web Bluetooth needs a secure context (docs/DEPLOYMENT.md).
+#
+#   docker compose up -d postgres          just the database, for local tests
+#   docker compose up -d                   the whole stack
+# =============================================================================
+# Without this, compose derives the project name from the directory -- and this
+# directory is called `web`. On a host running forty containers for a dozen
+# projects, `web-postgres-1` is a name that will collide with something sooner or
+# later, and the collision surfaces as one project's `docker compose down`
+# stopping another's database.
+name: maxl
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-maxl}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-maxl}
+    ports:
+      # Loopback only. Nothing outside this host has any business reaching the
+      # database directly. Not 5432, so it does not collide with a PostgreSQL
+      # that is already running on the machine.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Without this the web service starts before the socket accepts
+      # connections and the first migration fails on a cold boot.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-maxl} -d ${POSTGRES_DB:-maxl}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    build:
+      # The bridge is part of the build: the dashboard imports its protocol
+      # decoder rather than keeping a second copy, so the context is the repo
+      # root and not this directory.
+      context: ..
+      dockerfile: web/Dockerfile
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-maxl}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-maxl}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?set DASHBOARD_PASSWORD in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      HOST: 0.0.0.0
+      PORT: "4321"
+    ports:
+      - "127.0.0.1:${WEB_PORT:-4321}:4321"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

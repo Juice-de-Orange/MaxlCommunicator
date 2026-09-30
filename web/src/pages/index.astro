@@ -1,0 +1,160 @@
+---
+import Shell from "../layouts/Shell.astro";
+import { listNodes, peersHeardBy, windowStart } from "../lib/queries";
+import { absoluteTime, relativeTime } from "../lib/format";
+
+export const prerender = false;
+
+const nodes = await listNodes();
+const since = windowStart();
+
+const heard = new Map<number, Awaited<ReturnType<typeof peersHeardBy>>>();
+for (const node of nodes) {
+  heard.set(node.nodeId, await peersHeardBy(node.id, since));
+}
+
+/** Nodes that only exist as somebody else's observation are still worth showing. */
+const known = new Set(nodes.map((n) => n.nodeId));
+const strangers = new Map<number, Date>();
+for (const observations of heard.values()) {
+  for (const { peerNodeId, latest } of observations) {
+    if (known.has(peerNodeId)) continue;
+    const existing = strangers.get(peerNodeId);
+    if (!existing || latest.occurredAt > existing) strangers.set(peerNodeId, latest.occurredAt);
+  }
+}
+
+const pct = (used: number | null, limit: number | null) =>
+  used !== null && limit ? Math.min(100, Math.round((used / limit) * 100)) : null;
+---
+
+<Shell title="Nodes" subtitle="Everything here is a projection over the event log; nothing is changed in place.">
+  {
+    nodes.length === 0 && (
+      <div class="rounded-lg border border-hairline bg-surface p-6 text-sm text-ink-secondary">
+        <p class="mb-3">No node registered yet.</p>
+        <pre class="overflow-x-auto rounded bg-plane p-3 text-xs">npm run device:add -- --node-id 1 --name "T-Echo A"</pre>
+        <p class="mt-3">
+          The token is shown once and stored only as a hash. The bridge sends it as
+          <code class="text-ink">Authorization: Bearer &lt;token&gt;</code>.
+        </p>
+      </div>
+    )
+  }
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    {
+      nodes.map((node) => {
+        const state = node.state;
+        const budget = pct(state?.budgetUsedMs ?? null, state?.budgetLimitMs ?? null);
+        const peers = heard.get(node.nodeId) ?? [];
+        return (
+          <a
+            href={`/nodes/${node.nodeId}`}
+            class="block rounded-lg border border-hairline bg-surface p-5 transition-colors hover:border-[color:var(--color-series-1)]"
+          >
+            <div class="flex items-baseline justify-between gap-3">
+              <h2 class="text-base font-semibold">{node.name}</h2>
+              <span class="tabular text-xs text-ink-muted">
+                Node {node.nodeId} · 0x{node.nodeId.toString(16).padStart(4, "0")}
+              </span>
+            </div>
+
+            <p class="mt-1 text-xs text-ink-secondary">
+              Last sync {relativeTime(node.lastSeenAt)}
+              {node.lastSeenAt && <span class="text-ink-muted"> · {absoluteTime(node.lastSeenAt)}</span>}
+            </p>
+
+            {state?.timeValid === false && (
+              <p class="mt-3 rounded border border-[color:var(--color-critical)] px-2 py-1 text-xs text-[color:var(--color-critical)]">
+                ⚠ No valid time — the node is fully blocked from transmitting (CLAUDE.md §1.2).
+              </p>
+            )}
+            {state?.keyProvisioned === false && (
+              <p class="mt-2 rounded border border-[color:var(--color-warning)] px-2 py-1 text-xs text-ink-secondary">
+                No network key provisioned.
+              </p>
+            )}
+
+            <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <div>
+                <dt class="text-xs text-ink-muted">Battery</dt>
+                <dd class="tabular">
+                  {state?.batteryMv ? `${(state.batteryMv / 1000).toFixed(2)} V` : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs text-ink-muted">Queue</dt>
+                <dd class="tabular">{state?.queueDepth ?? "—"}</dd>
+              </div>
+              {state?.latDeg7 != null && state?.lonDeg7 != null && (
+                <div class="col-span-2">
+                  <dt class="text-xs text-ink-muted">
+                    Position {relativeTime(state.positionAt)}
+                  </dt>
+                  <dd class="tabular">
+                    {(state.latDeg7 / 1e7).toFixed(5)}, {(state.lonDeg7 / 1e7).toFixed(5)}
+                    {state.altM != null && ` · ${state.altM} m`}
+                    {/* D11: tenths on the wire, 255 means unusable or unknown. */}
+                    {state.hdop != null && state.hdop < 255 &&
+                      ` · HDOP ${(state.hdop / 10).toFixed(1)}`}
+                  </dd>
+                </div>
+              )}
+              <div class="col-span-2">
+                <dt class="text-xs text-ink-muted">
+                  Radio budget {state?.budgetBand === 1 ? "g1" : "g3"}
+                </dt>
+                <dd class="tabular">
+                  {budget === null ? (
+                    "—"
+                  ) : (
+                    <>
+                      <span>
+                        {((state!.budgetUsedMs ?? 0) / 1000).toFixed(0)} s of{" "}
+                        {((state!.budgetLimitMs ?? 0) / 1000).toFixed(0)} s
+                      </span>
+                      <div class="mt-1 h-1.5 w-full rounded-full bg-plane">
+                        <div
+                          class="h-1.5 rounded-full"
+                          style={`width:${budget}%;background:var(${
+                            budget > 85 ? "--color-critical" : budget > 60 ? "--color-warning" : "--color-series-1"
+                          })`}
+                        />
+                      </div>
+                    </>
+                  )}
+                </dd>
+              </div>
+            </dl>
+
+            {peers.length > 0 && (
+              <p class="mt-4 border-t border-hairline pt-3 text-xs text-ink-secondary">
+                hears {peers.map((p) => `Node ${p.peerNodeId}`).join(", ")}
+              </p>
+            )}
+          </a>
+        );
+      })
+    }
+  </div>
+
+  {
+    strangers.size > 0 && (
+      <section class="mt-8">
+        <h2 class="mb-2 text-sm font-medium">Heard, but not registered</h2>
+        <p class="mb-3 text-xs text-ink-secondary">
+          A registered device has received these nodes, but they do not sync themselves. Until a
+          phone has been with them, this is all that is known about them.
+        </p>
+        <ul class="space-y-1 text-sm">
+          {[...strangers.entries()].map(([nodeId, at]) => (
+            <li class="tabular text-ink-secondary">
+              Node {nodeId} — last heard {relativeTime(at)}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</Shell>

@@ -1,0 +1,400 @@
+---
+/*
+ * One line chart, server-rendered as SVG.
+ *
+ * No charting library. The data is on the server already, the shapes are lines
+ * over time, and every library that could draw them would have to come from a
+ * CDN or a bundle -- for marks that are twelve lines of path arithmetic.
+ *
+ * Design rules this holds to, and each one is a thing that goes wrong when it is
+ * not held to:
+ *
+ *   - **One y-axis, never two.** Two measures of different scale get two charts.
+ *     A dual axis makes any two series look correlated, and the correlation is
+ *     an artefact of where the author put the zero.
+ *   - Marks are 2 px; grid and axis are hairlines and recede.
+ *   - Text wears ink tokens, never the series colour. The coloured mark beside a
+ *     label is what carries identity.
+ *   - A legend whenever there are two or more series; a single series is named
+ *     by the chart's own title and needs no box.
+ *   - A crosshair and a tooltip, always. An SVG chart in a browser is an
+ *     interactive chart whether or not anyone planned for it.
+ */
+
+export interface Point {
+  x: number; // epoch ms
+  y: number | null; // null breaks the line rather than interpolating a gap
+}
+
+export interface Series {
+  name: string;
+  /** CSS custom property name from the validated palette, e.g. "--color-series-1". */
+  color: string;
+  points: Point[];
+}
+
+interface Props {
+  title: string;
+  unit?: string;
+  series: Series[];
+  /** A horizontal rule with a label -- the duty cycle allowance, a threshold. */
+  reference?: { value: number; label: string };
+  /** Decimal places for values in ticks and the tooltip. */
+  precision?: number;
+  /** Force the y-axis to include zero. Off by default: a battery that moves
+   *  between 3.9 and 4.2 V says nothing at all when drawn from zero. */
+  zeroBased?: boolean;
+  height?: number;
+}
+
+const {
+  title,
+  unit = "",
+  series,
+  reference,
+  precision = 1,
+  zeroBased = false,
+  height = 200,
+} = Astro.props;
+
+const WIDTH = 720;
+const PAD = { top: 16, right: 64, bottom: 28, left: 52 };
+const plotW = WIDTH - PAD.left - PAD.right;
+const plotH = height - PAD.top - PAD.bottom;
+
+const all = series.flatMap((s) => s.points);
+const values = all.map((p) => p.y).filter((y): y is number => y !== null);
+const xs = all.map((p) => p.x);
+
+const hasData = values.length > 0;
+
+const xMin = hasData ? Math.min(...xs) : 0;
+const xMax = hasData ? Math.max(...xs) : 1;
+let yMin = hasData ? Math.min(...values) : 0;
+let yMax = hasData ? Math.max(...values) : 1;
+if (reference) {
+  yMax = Math.max(yMax, reference.value);
+  yMin = Math.min(yMin, reference.value);
+}
+if (zeroBased) {
+  yMin = Math.min(0, yMin);
+}
+// A flat series would otherwise divide by zero and draw nothing.
+if (yMax - yMin < 1e-9) {
+  yMax = yMin + 1;
+}
+const headroom = (yMax - yMin) * 0.08;
+yMin -= headroom;
+yMax += headroom;
+
+const sx = (x: number) => PAD.left + ((x - xMin) / Math.max(1, xMax - xMin)) * plotW;
+const sy = (y: number) => PAD.top + plotH - ((y - yMin) / (yMax - yMin)) * plotH;
+
+/** Split on nulls so a gap in the data reads as a gap, not as a straight line
+ *  through it -- a node that was out of range for an hour did not report a
+ *  smooth trend across that hour. */
+function paths(points: Point[]): string[] {
+  const out: string[] = [];
+  let current: string[] = [];
+  for (const point of points) {
+    if (point.y === null) {
+      if (current.length > 1) out.push(current.join(" "));
+      current = [];
+      continue;
+    }
+    current.push(`${current.length === 0 ? "M" : "L"}${sx(point.x).toFixed(1)},${sy(point.y).toFixed(1)}`);
+  }
+  if (current.length > 1) out.push(current.join(" "));
+  return out;
+}
+
+const fmt = (value: number) => value.toFixed(precision);
+
+const yTicks = Array.from({ length: 4 }, (_, i) => yMin + headroom + ((yMax - yMin - 2 * headroom) * i) / 3);
+const xTicks = Array.from({ length: 4 }, (_, i) => xMin + ((xMax - xMin) * i) / 3);
+const timeLabel = (ms: number) =>
+  new Date(ms).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+const showLegend = series.length >= 2;
+// Direct labels are what let the aqua slot be used at all on a light surface --
+// it sits below 3:1 contrast, and the relief rule is a visible label.
+const lastOf = (s: Series) => [...s.points].reverse().find((p) => p.y !== null);
+
+const chartId = `chart-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<figure class="rounded-lg border border-hairline bg-surface p-4">
+  <figcaption class="mb-1 flex items-baseline justify-between gap-4">
+    <span class="text-sm font-medium text-ink">{title}</span>
+    {unit && <span class="text-xs text-ink-muted">{unit}</span>}
+  </figcaption>
+
+  {
+    showLegend && (
+      <ul class="mb-2 flex flex-wrap gap-x-4 gap-y-1">
+        {series.map((s) => (
+          <li class="flex items-center gap-1.5 text-xs text-ink-secondary">
+            <span
+              class="inline-block h-0.5 w-4 rounded-full"
+              style={`background:var(${s.color})`}
+              aria-hidden="true"
+            />
+            {s.name}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    !hasData ? (
+      <p class="py-10 text-center text-sm text-ink-muted">No data in the selected range.</p>
+    ) : (
+      <div class="relative" data-chart id={chartId}>
+        <svg
+          viewBox={`0 0 ${WIDTH} ${height}`}
+          class="w-full"
+          role="img"
+          aria-label={`${title}${unit ? ` in ${unit}` : ""}`}
+          style={`height:${height}px`}
+        >
+          {yTicks.map((tick) => (
+            <g>
+              <line
+                x1={PAD.left}
+                x2={WIDTH - PAD.right}
+                y1={sy(tick)}
+                y2={sy(tick)}
+                stroke="var(--color-grid)"
+                stroke-width="1"
+              />
+              <text
+                x={PAD.left - 8}
+                y={sy(tick)}
+                text-anchor="end"
+                dominant-baseline="middle"
+                class="tabular"
+                font-size="11"
+                fill="var(--color-ink-muted)"
+              >
+                {fmt(tick)}
+              </text>
+            </g>
+          ))}
+
+          {xTicks.map((tick) => (
+            <text
+              x={sx(tick)}
+              y={height - 8}
+              text-anchor="middle"
+              class="tabular"
+              font-size="11"
+              fill="var(--color-ink-muted)"
+            >
+              {timeLabel(tick)}
+            </text>
+          ))}
+
+          <line
+            x1={PAD.left}
+            x2={WIDTH - PAD.right}
+            y1={PAD.top + plotH}
+            y2={PAD.top + plotH}
+            stroke="var(--color-axis)"
+            stroke-width="1"
+          />
+
+          {reference && (
+            <g>
+              <line
+                x1={PAD.left}
+                x2={WIDTH - PAD.right}
+                y1={sy(reference.value)}
+                y2={sy(reference.value)}
+                stroke="var(--color-critical)"
+                stroke-width="1"
+                stroke-dasharray="4 4"
+              />
+              <text
+                x={WIDTH - PAD.right + 6}
+                y={sy(reference.value)}
+                dominant-baseline="middle"
+                font-size="11"
+                fill="var(--color-ink-secondary)"
+              >
+                {reference.label}
+              </text>
+            </g>
+          )}
+
+          {series.map((s) =>
+            paths(s.points).map((d) => (
+              <path
+                d={d}
+                fill="none"
+                stroke={`var(${s.color})`}
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            )),
+          )}
+
+          {series.map((s) => {
+            const last = lastOf(s);
+            return last ? (
+              <g>
+                <circle
+                  cx={sx(last.x)}
+                  cy={sy(last.y!)}
+                  r="4"
+                  fill={`var(${s.color})`}
+                  stroke="var(--color-surface)"
+                  stroke-width="2"
+                />
+                <text
+                  x={sx(last.x) + 8}
+                  y={sy(last.y!)}
+                  dominant-baseline="middle"
+                  class="tabular"
+                  font-size="11"
+                  fill="var(--color-ink-secondary)"
+                >
+                  {fmt(last.y!)}
+                </text>
+              </g>
+            ) : null;
+          })}
+
+          <line
+            data-crosshair
+            x1="0"
+            x2="0"
+            y1={PAD.top}
+            y2={PAD.top + plotH}
+            stroke="var(--color-axis)"
+            stroke-width="1"
+            opacity="0"
+          />
+          <rect
+            data-hit
+            x={PAD.left}
+            y={PAD.top}
+            width={plotW}
+            height={plotH}
+            fill="transparent"
+          />
+        </svg>
+
+        <div
+          data-tooltip
+          class="pointer-events-none absolute hidden rounded border border-hairline bg-surface px-2 py-1 text-xs shadow-sm"
+        >
+        </div>
+
+        <!-- is:inline so Astro leaves it as data rather than trying to bundle it -->
+        <script
+          is:inline
+          type="application/json"
+          data-series
+          set:html={JSON.stringify({
+            pad: PAD,
+            width: WIDTH,
+            plotW,
+            xMin,
+            xMax,
+            precision,
+            unit,
+            series: series.map((s) => ({ name: s.name, color: s.color, points: s.points })),
+          })}
+        />
+      </div>
+    )
+  }
+</figure>
+
+<script>
+  /*
+   * Hover for every chart on the page. One listener per chart, wired from the
+   * JSON the server already rendered beside it -- so the numbers in the tooltip
+   * are the numbers that were drawn, and there is no second source of truth to
+   * drift.
+   */
+  interface Point { x: number; y: number | null }
+  interface Meta {
+    pad: { top: number; right: number; bottom: number; left: number };
+    width: number;
+    plotW: number;
+    xMin: number;
+    xMax: number;
+    precision: number;
+    unit: string;
+    series: { name: string; color: string; points: Point[] }[];
+  }
+
+  for (const chart of document.querySelectorAll<HTMLElement>("[data-chart]")) {
+    const json = chart.querySelector<HTMLScriptElement>("[data-series]");
+    const hit = chart.querySelector<SVGRectElement>("[data-hit]");
+    const crosshair = chart.querySelector<SVGLineElement>("[data-crosshair]");
+    const tooltip = chart.querySelector<HTMLElement>("[data-tooltip]");
+    if (!json || !hit || !crosshair || !tooltip) continue;
+
+    const meta: Meta = JSON.parse(json.textContent ?? "{}");
+    const svg = chart.querySelector("svg")!;
+
+    const show = (event: PointerEvent) => {
+      const box = svg.getBoundingClientRect();
+      // The SVG scales to the container, so screen pixels have to be mapped
+      // back through the viewBox before any of the geometry means anything.
+      const scale = meta.width / box.width;
+      const svgX = (event.clientX - box.left) * scale;
+      const ratio = Math.min(1, Math.max(0, (svgX - meta.pad.left) / meta.plotW));
+      const targetX = meta.xMin + ratio * (meta.xMax - meta.xMin);
+
+      const rows: string[] = [];
+      let stamp: number | null = null;
+      for (const s of meta.series) {
+        let best: Point | null = null;
+        let bestDistance = Infinity;
+        for (const point of s.points) {
+          if (point.y === null) continue;
+          const distance = Math.abs(point.x - targetX);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = point;
+          }
+        }
+        if (!best) continue;
+        stamp ??= best.x;
+        rows.push(
+          `<div class="flex items-center gap-2"><span style="background:var(${s.color})" ` +
+            `class="inline-block h-0.5 w-3 rounded-full"></span>` +
+            `<span class="text-ink-secondary">${s.name}</span>` +
+            `<span class="tabular ml-auto text-ink">${best.y!.toFixed(meta.precision)}` +
+            `${meta.unit ? ` ${meta.unit}` : ""}</span></div>`,
+        );
+      }
+      if (rows.length === 0 || stamp === null) return;
+
+      const when = new Date(stamp).toLocaleString("en-GB", {
+        day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+      });
+      tooltip.innerHTML = `<div class="mb-1 text-ink-muted">${when}</div>${rows.join("")}`;
+      tooltip.classList.remove("hidden");
+
+      const pixelX = meta.pad.left / scale + ratio * (meta.plotW / scale);
+      tooltip.style.left = `${Math.min(box.width - tooltip.offsetWidth - 4, Math.max(4, pixelX + 12))}px`;
+      tooltip.style.top = `8px`;
+
+      crosshair.setAttribute("x1", String(meta.pad.left + ratio * meta.plotW));
+      crosshair.setAttribute("x2", String(meta.pad.left + ratio * meta.plotW));
+      crosshair.setAttribute("opacity", "1");
+    };
+
+    hit.addEventListener("pointermove", show);
+    hit.addEventListener("pointerleave", () => {
+      tooltip.classList.add("hidden");
+      crosshair.setAttribute("opacity", "0");
+    });
+  }
+</script>

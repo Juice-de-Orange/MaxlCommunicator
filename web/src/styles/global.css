@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+/*
+ * Palette from the data-visualisation reference instance, validated with its own
+ * checker rather than by eye:
+ *
+ *   light  worst adjacent CVD dE 9.2, normal-vision dE 27.6   -- all checks pass
+ *   dark   worst adjacent CVD dE 9.4, normal-vision dE 26.5   -- all checks pass
+ *
+ * Three categorical slots, deliberately. The all-pairs gate only clears for the
+ * first three, and nothing on this dashboard needs a fourth series: measures of
+ * different scale go in separate charts, because a dual axis is the one chart
+ * mistake that makes two unrelated shapes look correlated.
+ *
+ * Aqua sits below 3:1 on the light surface, so every chart that uses it carries
+ * a direct label or a table view -- the relief rule, not an oversight.
+ */
+@theme {
+  --color-surface: #fcfcfb;
+  --color-plane: #f9f9f7;
+  --color-ink: #0b0b0b;
+  --color-ink-secondary: #52514e;
+  --color-ink-muted: #898781;
+  --color-grid: #e1e0d9;
+  --color-axis: #c3c2b7;
+  --color-hairline: rgba(11, 11, 11, 0.1);
+
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+  --color-series-3: #1baf7a;
+
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-serious: #ec835a;
+  --color-critical: #d03b3b;
+}
+
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --color-surface: #1a1a19;
+    --color-plane: #0d0d0d;
+    --color-ink: #ffffff;
+    --color-ink-secondary: #c3c2b7;
+    --color-ink-muted: #898781;
+    --color-grid: #2c2c2a;
+    --color-axis: #383835;
+    --color-hairline: rgba(255, 255, 255, 0.1);
+
+    --color-series-1: #3987e5;
+    --color-series-2: #d95926;
+    --color-series-3: #199e70;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-surface: #1a1a19;
+  --color-plane: #0d0d0d;
+  --color-ink: #ffffff;
+  --color-ink-secondary: #c3c2b7;
+  --color-ink-muted: #898781;
+  --color-grid: #2c2c2a;
+  --color-axis: #383835;
+  --color-hairline: rgba(255, 255, 255, 0.1);
+
+  --color-series-1: #3987e5;
+  --color-series-2: #d95926;
+  --color-series-3: #199e70;
+}
+
+html {
+  background: var(--color-plane);
+  color: var(--color-ink);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Axis ticks and table columns have to line up vertically; body copy does not. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

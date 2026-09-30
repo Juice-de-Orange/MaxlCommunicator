@@ -1,0 +1,59 @@
+---
+import "../styles/global.css";
+
+export const prerender = false;
+
+const failed = Astro.url.searchParams.has("failed");
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in — MaxlCommunicator</title>
+  </head>
+  <body class="flex min-h-screen items-center justify-center bg-plane text-ink">
+    <form
+      method="post"
+      action="/api/login"
+      class="w-full max-w-sm rounded-lg border border-hairline bg-surface p-6"
+    >
+      <h1 class="text-lg font-semibold">MaxlCommunicator</h1>
+      <p class="mt-1 text-sm text-ink-secondary">Dashboard</p>
+
+      <label class="mt-6 block text-sm">
+        <span class="text-ink-secondary">Password</span>
+        <input
+          type="password"
+          name="password"
+          autocomplete="current-password"
+          required
+          autofocus
+          class="mt-1 w-full rounded border border-hairline bg-plane px-3 py-2 outline-none focus:border-[color:var(--color-series-1)]"
+        />
+      </label>
+
+      {
+        failed && (
+          <p class="mt-3 text-sm text-[color:var(--color-critical)]">
+            Wrong password.
+          </p>
+        )
+      }
+
+      <button
+        type="submit"
+        class="mt-6 w-full rounded bg-[color:var(--color-series-1)] px-3 py-2 text-sm font-medium text-white"
+      >
+        Sign in
+      </button>
+
+      <p class="mt-6 text-xs text-ink-muted">
+        One password, no user accounts — two nodes and one operator need no user
+        management. The ingestion endpoint does not depend on it; it authenticates a
+        device-bridge pair with its own token.
+      </p>
+    </form>
+  </body>
+</html>

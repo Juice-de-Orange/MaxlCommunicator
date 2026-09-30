@@ -1,0 +1,367 @@
+---
+import Shell from "../../layouts/Shell.astro";
+import LineChart, { type Series } from "../../components/LineChart.astro";
+import ConfigPush from "../../components/ConfigPush";
+import { decodeConfigTlvs } from "../../lib/config-tlv";
+import {
+  configVersionsFor,
+  eventCountFor,
+  linkStatsFor,
+  messagesFor,
+  nodeByNodeId,
+  observationsFor,
+  samplesFor,
+  windowStart,
+} from "../../lib/queries";
+import {
+  absoluteTime,
+  bearingDeg,
+  compassPoint,
+  degrees,
+  distanceM,
+  MESSAGE_STATE_CLASS,
+  MESSAGE_STATE_LABEL,
+  relativeTime,
+} from "../../lib/format";
+
+export const prerender = false;
+
+const nodeId = Number.parseInt(Astro.params.nodeId ?? "", 10);
+if (!Number.isInteger(nodeId)) return Astro.redirect("/");
+
+const node = await nodeByNodeId(nodeId);
+if (!node) return new Response("No such node", { status: 404 });
+
+const hours = Number.parseInt(Astro.url.searchParams.get("h") ?? "24", 10) || 24;
+const since = windowStart(hours);
+
+const [samples, observations, links, recentMessages, configs, eventCount] = await Promise.all([
+  samplesFor(node.id, since),
+  observationsFor(node.id, since),
+  linkStatsFor(node.id, since),
+  messagesFor(node.id, 50),
+  configVersionsFor(node.id),
+  eventCountFor(node.id),
+]);
+
+const state = node.state;
+
+/* Colours are assigned per peer in a fixed order and never cycled -- a filter
+ * that removes one peer must not repaint the others. Three slots is the whole
+ * palette that clears the all-pairs gate, and with more peers than that the
+ * answer is small multiples, not a fourth hue. */
+const SLOTS = ["--color-series-1", "--color-series-2", "--color-series-3"] as const;
+const peerIds = [...new Set(observations.map((o) => o.peerNodeId))].sort((a, b) => a - b);
+const colourOf = (peerNodeId: number) =>
+  SLOTS[peerIds.indexOf(peerNodeId) % SLOTS.length]!;
+
+function peerSeries(
+  pick: (row: (typeof observations)[number]) => number | null,
+  scale = 1,
+): Series[] {
+  return peerIds
+    .map((peerNodeId) => ({
+      name: `Node ${peerNodeId}`,
+      color: colourOf(peerNodeId),
+      points: observations
+        .filter((row) => row.peerNodeId === peerNodeId && pick(row) !== null)
+        .map((row) => ({ x: row.occurredAt.getTime(), y: pick(row)! * scale })),
+    }))
+    .filter((series) => series.points.length > 0);
+}
+
+function linkSeries(pick: (row: (typeof links)[number]) => number | null): Series[] {
+  const ids = [...new Set(links.map((l) => l.peerNodeId))].sort((a, b) => a - b);
+  return ids
+    .map((peerNodeId) => ({
+      name: `Node ${peerNodeId}`,
+      color: colourOf(peerNodeId),
+      points: links
+        .filter((row) => row.peerNodeId === peerNodeId && pick(row) !== null)
+        .map((row) => ({ x: row.occurredAt.getTime(), y: pick(row)! })),
+    }))
+    .filter((series) => series.points.length > 0);
+}
+
+const batterySeries: Series[] = [
+  {
+    name: node.name,
+    color: "--color-series-1",
+    points: samples
+      .filter((s) => s.batteryMv !== null)
+      .map((s) => ({ x: s.occurredAt.getTime(), y: s.batteryMv! / 1000 })),
+  },
+];
+
+const budgetSamples = samples.filter((s) => s.budgetUsedMs !== null);
+const budgetSeries: Series[] = [
+  {
+    name: "airtime used",
+    color: "--color-series-1",
+    points: budgetSamples.map((s) => ({ x: s.occurredAt.getTime(), y: s.budgetUsedMs! / 1000 })),
+  },
+];
+const budgetLimitS = (budgetSamples.at(-1)?.budgetLimitMs ?? 360_000) / 1000;
+
+// Own position from EVT_FIX; peers from what this node heard.
+const own =
+  state?.latDeg7 != null && state.lonDeg7 != null
+    ? { lat: degrees(state.latDeg7)!, lon: degrees(state.lonDeg7)! }
+    : null;
+
+const peerPositions = peerIds
+  .map((peerNodeId) => {
+    const latest = [...observations]
+      .reverse()
+      .find((o) => o.peerNodeId === peerNodeId && o.latDeg7 !== null);
+    if (!latest) return null;
+    const lat = degrees(latest.latDeg7)!;
+    const lon = degrees(latest.lonDeg7)!;
+    return {
+      peerNodeId,
+      lat,
+      lon,
+      altM: latest.altM,
+      at: latest.occurredAt,
+      distance: own ? distanceM(own.lat, own.lon, lat, lon) : null,
+      bearing: own ? bearingDeg(own.lat, own.lon, lat, lon) : null,
+    };
+  })
+  .filter((p): p is NonNullable<typeof p> => p !== null);
+
+/*
+ * What the node is believed to be running: the newest config it has actually
+ * acknowledged. Showing the newest *pushed* one would present a setting as
+ * current that the device may never have seen -- which is the whole distinction
+ * CLAUDE.md 4.3 draws with applied_at.
+ */
+const applied = configs.find((config) => config.appliedAt !== null);
+const currentSettings = applied ? decodeConfigTlvs(applied.tlvs) : {};
+const lastPushedVersion = configs[0]?.configVersion ?? null;
+const lastAppliedVersion = applied?.configVersion ?? null;
+
+const ranges = [
+  { hours: 6, label: "6 h" },
+  { hours: 24, label: "24 h" },
+  { hours: 72, label: "3 d" },
+  { hours: 24 * 7, label: "7 d" },
+];
+---
+
+<Shell
+  title={node.name}
+  subtitle={`Node ${node.nodeId} · ${eventCount} events in the log · last sync ${relativeTime(node.lastSeenAt)}`}
+>
+  <div class="mb-6 flex flex-wrap items-center gap-2">
+    {
+      ranges.map((range) => (
+        <a
+          href={`/nodes/${node.nodeId}?h=${range.hours}`}
+          class:list={[
+            "rounded border px-2.5 py-1 text-xs transition-colors",
+            hours === range.hours
+              ? "border-[color:var(--color-series-1)] text-ink"
+              : "border-hairline text-ink-secondary hover:text-ink",
+          ]}
+        >
+          {range.label}
+        </a>
+      ))
+    }
+    <span class="ml-auto text-xs text-ink-muted">since {absoluteTime(since)}</span>
+  </div>
+
+  <section class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {
+      [
+        { label: "Battery", value: state?.batteryMv ? `${(state.batteryMv / 1000).toFixed(2)} V` : "—" },
+        { label: "Uptime", value: state?.uptimeS ? `${Math.floor(state.uptimeS / 3600)} h` : "—" },
+        { label: "Queue", value: state?.queueDepth ?? "—" },
+        {
+          label: "Budget",
+          value:
+            state?.budgetUsedMs != null && state.budgetLimitMs
+              ? `${(state.budgetUsedMs / 1000).toFixed(0)}/${(state.budgetLimitMs / 1000).toFixed(0)} s`
+              : "—",
+        },
+      ].map((tile) => (
+        <div class="rounded-lg border border-hairline bg-surface p-4">
+          <p class="text-xs text-ink-muted">{tile.label}</p>
+          <p class="tabular mt-1 text-xl">{tile.value}</p>
+        </div>
+      ))
+    }
+  </section>
+
+  <div class="grid gap-4 lg:grid-cols-2">
+    <LineChart
+      title="Radio budget over the rolling hour"
+      unit="s"
+      series={budgetSeries}
+      reference={{ value: budgetLimitS, label: `${budgetLimitS.toFixed(0)} s` }}
+      precision={0}
+      zeroBased
+    />
+    <LineChart title="Battery voltage" unit="V" series={batterySeries} precision={2} />
+    <LineChart title="Peer temperature" unit="°C" series={peerSeries((r) => r.tempC100, 0.01)} precision={1} />
+    <LineChart title="Peer humidity" unit="% RH" series={peerSeries((r) => r.humidity100, 0.01)} precision={0} />
+    <LineChart title="Peer air pressure" unit="hPa" series={peerSeries((r) => r.pressurePa, 0.01)} precision={1} />
+    <LineChart title="Received signal strength per peer" unit="dBm" series={linkSeries((r) => r.rssi)} precision={0} />
+    <LineChart title="Signal-to-noise ratio per peer" unit="dB" series={linkSeries((r) => r.snr)} precision={0} />
+  </div>
+
+  <section class="mt-10">
+    <h2 class="mb-3 text-sm font-medium">Position</h2>
+    <div class="rounded-lg border border-hairline bg-surface p-5 text-sm">
+      {
+        own ? (
+          <p class="tabular">
+            Own position {own.lat.toFixed(5)}, {own.lon.toFixed(5)}
+            {state?.altM != null && <span> · {state.altM} m</span>}
+            <span class="text-ink-muted"> · {relativeTime(state?.positionAt ?? null)}</span>
+          </p>
+        ) : (
+          <p class="text-ink-secondary">No own fix yet. GNSS is off by default (CLAUDE.md §1.5).</p>
+        )
+      }
+
+      {
+        peerPositions.length > 0 && (
+          <table class="mt-4 w-full text-left">
+            <thead class="text-xs text-ink-muted">
+              <tr>
+                <th class="pb-2 font-normal">Peer</th>
+                <th class="pb-2 font-normal">Position</th>
+                <th class="pb-2 font-normal">Distance</th>
+                <th class="pb-2 font-normal">Direction</th>
+                <th class="pb-2 font-normal">heard</th>
+              </tr>
+            </thead>
+            <tbody class="tabular">
+              {peerPositions.map((peer) => (
+                <tr class="border-t border-hairline">
+                  <td class="py-2">Node {peer.peerNodeId}</td>
+                  <td class="py-2">
+                    {peer.lat.toFixed(5)}, {peer.lon.toFixed(5)}
+                    {peer.altM != null && <span class="text-ink-muted"> · {peer.altM} m</span>}
+                  </td>
+                  <td class="py-2">
+                    {peer.distance === null
+                      ? "—"
+                      : peer.distance > 1000
+                        ? `${(peer.distance / 1000).toFixed(2)} km`
+                        : `${peer.distance.toFixed(0)} m`}
+                  </td>
+                  <td class="py-2">
+                    {peer.bearing === null
+                      ? "—"
+                      : `${peer.bearing.toFixed(0)}° ${compassPoint(peer.bearing)}`}
+                  </td>
+                  <td class="py-2 text-ink-secondary">{relativeTime(peer.at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="mb-3 text-sm font-medium">Messages</h2>
+    {
+      recentMessages.length === 0 ? (
+        <p class="text-sm text-ink-secondary">None yet.</p>
+      ) : (
+        <table class="w-full text-left text-sm">
+          <thead class="text-xs text-ink-muted">
+            <tr>
+              <th class="pb-2 font-normal">Time</th>
+              <th class="pb-2 font-normal">Direction</th>
+              <th class="pb-2 font-normal">Peer</th>
+              <th class="pb-2 font-normal">Content</th>
+              <th class="pb-2 font-normal">State</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentMessages.map((message) => (
+              <tr class="border-t border-hairline align-top">
+                <td class="tabular whitespace-nowrap py-2 text-ink-secondary">
+                  {absoluteTime(message.occurredAt)}
+                </td>
+                <td class="py-2 text-ink-secondary">{message.direction === "rx" ? "in" : "out"}</td>
+                <td class="tabular py-2">{message.peerNodeId ?? "—"}</td>
+                <td class="py-2">
+                  {message.text ?? (
+                    <span class="text-ink-muted">
+                      no content in the journal — see decision D10
+                    </span>
+                  )}
+                </td>
+                <td class={`py-2 whitespace-nowrap ${MESSAGE_STATE_CLASS[message.state] ?? ""}`}>
+                  {MESSAGE_STATE_LABEL[message.state] ?? message.state}
+                  {message.attempts != null && message.attempts > 1 && (
+                    <span class="tabular text-ink-muted"> · {message.attempts} attempts</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )
+    }
+  </section>
+
+  <section class="mt-10">
+    <h2 class="mb-3 text-sm font-medium">Send configuration</h2>
+    <ConfigPush
+      client:load
+      nodeId={node.nodeId}
+      current={currentSettings}
+      lastPushedVersion={lastPushedVersion}
+      lastAppliedVersion={lastAppliedVersion}
+    />
+  </section>
+
+  <section class="mt-10">
+    <h2 class="mb-3 text-sm font-medium">Config versions</h2>
+    <p class="mb-3 text-xs text-ink-secondary">
+      A pushed version is not an applied version. <code class="text-ink">applied</code>
+      is set only from the device's <code class="text-ink">EVT_CONFIG_APPLIED</code>.
+    </p>
+    {
+      configs.length === 0 ? (
+        <p class="text-sm text-ink-secondary">None pushed yet.</p>
+      ) : (
+        <table class="w-full text-left text-sm">
+          <thead class="text-xs text-ink-muted">
+            <tr>
+              <th class="pb-2 font-normal">Version</th>
+              <th class="pb-2 font-normal">pushed</th>
+              <th class="pb-2 font-normal">applied</th>
+              <th class="pb-2 font-normal">not applied</th>
+            </tr>
+          </thead>
+          <tbody class="tabular">
+            {configs.map((config) => (
+              <tr class="border-t border-hairline">
+                <td class="py-2">{config.configVersion}</td>
+                <td class="py-2 text-ink-secondary">{absoluteTime(config.pushedAt)}</td>
+                <td
+                  class={`py-2 ${config.appliedAt ? "text-[color:var(--color-good)]" : "text-[color:var(--color-warning)]"}`}
+                >
+                  {config.appliedAt ? absoluteTime(config.appliedAt) : "not yet acknowledged"}
+                </td>
+                <td class="py-2 text-ink-secondary">
+                  {config.unappliedTypes && config.unappliedTypes.length > 0
+                    ? [...config.unappliedTypes].map((t) => `0x${t.toString(16).padStart(2, "0")}`).join(", ")
+                    : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )
+    }
+  </section>
+</Shell>
