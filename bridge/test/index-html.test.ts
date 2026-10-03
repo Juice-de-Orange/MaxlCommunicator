@@ -11,10 +11,13 @@ import { runInNewContext } from "node:vm";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 
 function open(pathname: string, search = "", hash = ""): string | null {
-  const script = /<script>([\s\S]*?)<\/script>/.exec(html);
-  if (!script) throw new Error("index.html has no inline script");
+  // The first <script> in our own file, by position -- this is not an HTML
+  // filter and must not look like one.
+  const start = html.indexOf("<script>");
+  const end = html.indexOf("</script>", start);
+  if (start < 0 || end < 0) throw new Error("index.html has no inline script");
   let replaced: string | null = null;
-  runInNewContext(script[1]!, {
+  runInNewContext(html.slice(start + "<script>".length, end), {
     location: { pathname, search, hash, replace: (to: string) => void (replaced = to) },
   });
   return replaced;
