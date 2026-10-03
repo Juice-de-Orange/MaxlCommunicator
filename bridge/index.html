@@ -2,6 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script>
+      // Every URL below is relative. Opened as /app instead of /app/ they would
+      // resolve one level up and nothing would load -- so fix the address first.
+      if (!/(\/|\.html)$/.test(location.pathname)) {
+        location.replace(location.pathname + "/" + location.search + location.hash);
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1a1a19" />
     <link rel="manifest" href="./manifest.webmanifest" />

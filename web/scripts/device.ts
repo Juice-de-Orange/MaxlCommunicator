@@ -14,6 +14,7 @@
 import { eq } from "drizzle-orm";
 
 import { createDatabase } from "../src/db/client";
+import { loadDotEnv } from "../src/db/env";
 import { devices } from "../src/db/schema";
 import { generateIngestToken, hashIngestToken } from "../src/lib/auth";
 
@@ -22,9 +23,13 @@ function arg(name: string): string | undefined {
   return index >= 0 ? process.argv[index + 1] : undefined;
 }
 
+// As `npm run db:migrate` does. In the container there is no .env and the
+// environment is the source.
+loadDotEnv();
+
 const url = process.env.DATABASE_URL;
 if (!url) {
-  console.error("DATABASE_URL is not set");
+  console.error("DATABASE_URL is not set, and no .env supplied one. See web/.env.example.");
   process.exit(1);
 }
 

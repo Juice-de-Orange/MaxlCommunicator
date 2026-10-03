@@ -7,7 +7,7 @@ and the protocol part does not.
 
 ## Status
 
-**Protocol core and PWA are built**, 95 tests green. What is missing is missing on the hardware side, not
+**Protocol core and PWA are built**, 99 tests green. What is missing is missing on the hardware side, not
 in the code.
 
 | What | State |
@@ -81,11 +81,12 @@ sending twice is always the right choice.
 
 ## What is deliberately missing
 
-- **No reconnect loop, no service worker, no wake lock.** The connection drops as soon as
-  the tab goes into the background, and none of these means keeps a GATT connection
+- **No reconnect loop, no background sync in a service worker, no wake lock.** The connection
+  drops as soon as the tab goes into the background, and none of these means keeps a GATT connection
   alive (`CLAUDE.md` §4.2). Building them would be a convincing imitation of
   background sync that fails in the field. The native Android client with a foreground service is
-  Phase 9.
+  Phase 9. The one service worker there is, `public/sw.js`, is an application-shell cache so the
+  app opens without a network: no `sync` or `periodicsync` handler, and it never touches `/api/`.
 - **iOS is not supported.** Apple does not implement Web Bluetooth. `isSupported()`
   returns a dedicated text for it, so that the UI can say so instead of failing silently.
 - **No TLV for the duty cycle.** `docs/bridge-protocol.md` §3 says explicitly that there is

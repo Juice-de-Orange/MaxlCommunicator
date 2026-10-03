@@ -50,10 +50,15 @@ cp .env.example .env   # once; set POSTGRES_PASSWORD (twice), DASHBOARD_PASSWORD
 npm ci
 npm run db:up          # PostgreSQL 17 in a container, on 127.0.0.1:5433
 npm run db:migrate     # create the schema — the tests do not
-npm test               # against the real database
+npm test               # against the real database -- it empties the tables, before and after
 npm run build:all      # PWA + dashboard
 npm run dev            # http://localhost:4321
 ```
+
+`npm run dev`, `db:migrate`, the `device:*` scripts and the tests read `web/.env` themselves; a
+variable that is already set in the environment wins. `WEB_PORT` is the published port of the
+container deployment and does not apply to `npm run dev`: that is Astro's 4321 unless you pass
+one, `npm run dev -- --port 4400`.
 
 Nodes authenticate their uploads with a per-device ingest token:
 

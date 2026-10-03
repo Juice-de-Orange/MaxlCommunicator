@@ -15,6 +15,11 @@ Usage:
     python tools/uf2_inspect.py [PATH_TO_CURRENT.UF2]
 
 With no argument the script looks for a mounted volume labelled TECHOBOOT.
+
+Exit status: 0 only if an application image was found. 1 if there is nothing to
+read, or if the dump holds no recognisable SoftDevice or no plausible
+application -- so a script can ask "is this node flashed?" without parsing the
+report.
 """
 
 from __future__ import annotations
@@ -122,8 +127,11 @@ def describe_softdevice(base: int, image: bytes) -> int | None:
     return sd_size
 
 
-def map_pages(base: int, image: bytes, app_base: int | None) -> None:
-    """Print a run-length map of programmed vs erased pages."""
+def map_pages(base: int, image: bytes, app_base: int | None) -> bool:
+    """Print a run-length map of programmed vs erased pages.
+
+    Returns whether a plausible application image was found.
+    """
     print("\nFlash page map (4 KiB granularity, 0xFF = erased):")
     runs: list[list] = []
     for addr in range(base, base + len(image), PAGE_SIZE):
@@ -138,21 +146,22 @@ def map_pages(base: int, image: bytes, app_base: int | None) -> None:
         print(f"  0x{start:06X}-0x{end:06X}  {state}  {(end - start) / 1024:6.0f} KiB")
 
     if app_base is None:
-        return
+        return False
     off = app_base - base
     if off < 0 or off + 8 > len(image):
         print("\nApplication region is outside the dumped range.")
-        return
+        return False
     sp, reset = struct.unpack("<II", image[off : off + 8])
     print(f"\nApplication vector table @ 0x{app_base:X}:")
     if sp == 0xFFFFFFFF and reset == 0xFFFFFFFF:
         print("  erased -> NO APPLICATION IS FLASHED.")
         print("  The device will stay in the bootloader until an image is written.")
-        return
-    plausible = 0x20000000 <= sp <= 0x20040000 and (reset & 1)
+        return False
+    plausible = 0x20000000 <= sp <= 0x20040000 and bool(reset & 1)
     print(f"  initial SP  : 0x{sp:08X}")
     print(f"  reset vector: 0x{reset:08X}")
     print(f"  -> {'looks like a valid image' if plausible else 'does NOT look like a valid image'}")
+    return plausible
 
 
 def main(argv: list[str]) -> int:
@@ -192,8 +201,7 @@ def main(argv: list[str]) -> int:
     print()
 
     app_base = describe_softdevice(base, image)
-    map_pages(base, image, app_base)
-    return 0
+    return 0 if map_pages(base, image, app_base) else 1
 
 
 if __name__ == "__main__":

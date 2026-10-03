@@ -38,7 +38,7 @@ that can be verified without hardware on every build.
   a PWA (Web Bluetooth) and a native Android client implement it.
 - **Dashboard** with an append-only event log, projections, per-link radio statistics, duty-cycle
   history and remote configuration.
-- **Hardware-free verification**: 273 host test cases over the same sources the ARM build
+- **Hardware-free verification**: 276 host test cases over the same sources the ARM build
   compiles, two-node simulations, shared hand-written test vectors checked by firmware, PWA and
   Kotlin client, and build guards (layering, no dynamic allocation in `link/`/`app/`, flash budget,
   a release build that refuses a development key).
@@ -92,19 +92,27 @@ Never power a node without an antenna attached.
 Everything that is pure computation runs on a normal machine (Docker for the firmware tests):
 
 ```bash
+# from the repository root
 firmware/tools/hosttest.sh                   # firmware unit tests + two simulations, in Docker
 python3 firmware/scripts/check_layering.py   # layering rules (CLAUDE.md §3)
-python3 firmware/scripts/check_no_alloc.py   # no malloc/new in link/ and app/
-python3 firmware/scripts/check_size.py       # flash and RAM budget (gate 0.6), after a build
 
-cd bridge && npm ci && npm test              # bridge protocol and PWA, against the test vectors
-cd web && npm ci && npm run db:up && npm run db:migrate && npm test   # dashboard, real PostgreSQL 17
+(cd bridge && npm ci && npm test)            # bridge protocol and PWA, against the test vectors
+
+cp web/.env.example web/.env                 # once -- then fill in the values it asks for
+(cd web && npm ci && npm run db:up && npm run db:migrate && npm test)   # dashboard, real PostgreSQL 17
 
 android/tools/test.sh                        # Kotlin protocol core, in Docker
 android/tools/test.sh :app:testDebugUnitTest # connection flow and event store (needs the Android SDK)
 ```
 
-`web/` needs a `.env` first: `cp web/.env.example web/.env` and fill in the values it asks for.
+Two more build guards read the output of the ARM build, so they need no device but do need the
+firmware built first (toolchain: [Building the firmware](#building-the-firmware)):
+
+```bash
+(cd firmware && ../.venv/bin/python -m platformio run -e debug && ../.venv/bin/python -m platformio run -e release)
+python3 firmware/scripts/check_no_alloc.py   # no malloc/new in link/ and app/ -- reads the debug build's object files
+python3 firmware/scripts/check_size.py       # flash and RAM budget (gate 0.6) -- reads the release build's ELF
+```
 
 Green on the host means the logic is consistent — not that it runs on the nRF52840. Every gate in
 `docs/test-plan.md` except 2.15 needs hardware, most of them two devices.
@@ -198,10 +206,11 @@ of phase 5. Phase 8 (map tiles) is not started. Every report is in `docs/test-re
 what each run does *not* answer; `docs/test-results/README.md` is the index. "Green in simulation"
 is never counted as passed.
 
-**Known issues that matter before anyone relies on it** (tracked as issues): the ARQ computes
+**Known issues that matter before anyone relies on it** (tracked as issues #1–#3): the ARQ computes
 data-frame airtime with an 8-symbol preamble while frames go out with ~123, so the duty-cycle budget
-is underestimated for data frames; and the replay window is not persisted, so a captured frame can
-be replayed against a freshly rebooted receiver.
+is underestimated for data frames (#1); the replay window is not persisted, so a captured frame can
+be replayed against a freshly rebooted receiver (#2); and the ACK return path loses
+acknowledgements, which is why gates 2.1 and 2.4 are not passed (#3).
 
 ## Contributing
 

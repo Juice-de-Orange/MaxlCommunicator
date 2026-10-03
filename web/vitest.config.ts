@@ -7,6 +7,8 @@ export default defineConfig({
     alias: {
       "@protocol": fileURLToPath(new URL("../bridge/src/protocol", import.meta.url)),
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Only exists inside an Astro build; see the stub.
+      "astro:middleware": fileURLToPath(new URL("./test/stubs/astro-middleware.ts", import.meta.url)),
     },
   },
   test: {
