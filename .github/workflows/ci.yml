@@ -191,9 +191,10 @@ jobs:
       - run: npm ci
         working-directory: web
 
-      # The schema first: the tests do not create it, deliberately, so that a
-      # broken migration fails as a broken migration rather than as 38 confusing
-      # test failures.
+      # The schema first, as a step of its own, so that a broken migration fails
+      # as a broken migration. The tests do not use this database: they create
+      # and migrate `maxl_test` next to it (web/test/database.ts), which the
+      # service's superuser role may do.
       - run: npm run db:migrate
         working-directory: web
 

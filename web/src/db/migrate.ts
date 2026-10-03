@@ -8,6 +8,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 import { createDatabase } from "./client";
 import { loadDotEnv } from "./env";
+import { describeDatabaseError } from "./errors";
 
 loadDotEnv();
 
@@ -21,6 +22,14 @@ if (!url) {
 }
 
 const { db, sql } = createDatabase(url, { max: 1 });
-await migrate(db, { migrationsFolder: "./drizzle" });
+try {
+  await migrate(db, { migrationsFolder: "./drizzle" });
+} catch (error) {
+  // One line. The container prints this on every start with the database not
+  // yet there, and a stack trace through drizzle says nothing the line does not.
+  console.error(`migration failed: ${describeDatabaseError(error)}`);
+  await sql.end({ timeout: 1 }).catch(() => {});
+  process.exit(1);
+}
 await sql.end();
 console.log("migrations applied");

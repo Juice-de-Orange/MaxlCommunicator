@@ -9,7 +9,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { eq, sql } from "drizzle-orm";
 
-import { createDatabase, type Database } from "../src/db/client";
+import type { Database } from "../src/db/client";
 import {
   configVersions,
   deviceState,
@@ -20,7 +20,8 @@ import {
   peerObservations,
 } from "../src/db/schema";
 import { generateIngestToken, hashIngestToken } from "../src/lib/auth";
-import { POST } from "../src/pages/api/ingest";
+import { MAX_REQUEST_BYTES, POST } from "../src/pages/api/ingest";
+import { openTestDatabase, wipe } from "./database";
 import { configApplied, realisticRun, type SynthEvent } from "./synth";
 
 const NODE_ID = 0x0001;
@@ -69,33 +70,12 @@ async function countEvents(): Promise<number> {
 }
 
 beforeAll(async () => {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error("DATABASE_URL is not set -- run `npm run db:up` and copy .env.example");
-  }
-  database = createDatabase(url, { max: 4 });
+  database = openTestDatabase();
 });
-
-/*
- * The suite runs against the development database (`npm run db:up`), so it
- * takes its rows away again when it is done -- otherwise the last test's node
- * is the first thing in the dashboard's node list.
- */
-async function wipe(): Promise<void> {
-  const { db } = database;
-  // Order matters: everything references devices.
-  await db.delete(messages);
-  await db.delete(linkStats);
-  await db.delete(peerObservations);
-  await db.delete(deviceState);
-  await db.delete(configVersions);
-  await db.delete(events);
-  await db.delete(devices);
-}
 
 beforeEach(async () => {
   const { db } = database;
-  await wipe();
+  await wipe(database);
 
   token = generateIngestToken();
   const [row] = await db
@@ -106,7 +86,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await wipe();
+  await wipe(database);
   await database.sql.end();
 });
 
@@ -324,6 +304,86 @@ describe("input validation", () => {
     const run = realisticRun();
     const many = Array.from({ length: 600 }, (_, i) => ({ ...run[0]!, journalCounter: i + 1 }));
     expect((await post(payload(many))).status).toBe(413);
+  });
+
+  it.each([1.5, 2 ** 40, -1, 0x10000])("answers 400, not 500, for the node id %s", async (nodeId) => {
+    // Not an unknown node -- not a node id at all. It used to reach the query,
+    // where PostgreSQL refused the int4 parameter and the endpoint answered 500.
+    const response = await post({ ...payload(realisticRun()), nodeId });
+    expect(response.status).toBe(400);
+    expect((await response.json()).detail).toBe("nodeId must be an integer between 0 and 65535");
+    expect(await countEvents()).toBe(0);
+  });
+
+  it("accepts the largest batch the per-event and per-batch limits allow", async () => {
+    // The request cap is derived from those two limits, so it must not be the
+    // thing that refuses a batch they permit.
+    const body = toBase64(new Uint8Array(4096));
+    const many = Array.from({ length: 512 }, (_, i) => ({
+      journalCounter: i + 1,
+      direction: "rx",
+      opcode: 0x7f,
+      body,
+      receivedAt: "2026-08-31T09:00:00.000+00:00",
+      deviceTime: "2026-08-31T09:00:00.000+00:00",
+    }));
+    const batch = { nodeId: NODE_ID, events: many };
+    expect(Buffer.byteLength(JSON.stringify(batch))).toBeLessThan(MAX_REQUEST_BYTES);
+    const response = await post(batch);
+    expect(response.status).toBe(200);
+    expect((await response.json()).inserted).toBe(512);
+  });
+
+  it("refuses a request larger than any legitimate batch before parsing it", async () => {
+    // Valid JSON with an empty batch: the only thing wrong with it is its size.
+    // Without the cap this is a 200, after buffering and parsing all of it.
+    const response = await post({ nodeId: NODE_ID, events: [], pad: "x".repeat(MAX_REQUEST_BYTES) });
+    expect(response.status).toBe(413);
+    expect((await response.json()).error).toBe("request_too_large");
+  });
+
+  it("refuses on the declared length alone, without reading the body", async () => {
+    let pulled = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(new Uint8Array(1024));
+      },
+    });
+    const request = new Request("http://localhost/api/ingest", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "content-length": String(MAX_REQUEST_BYTES + 1),
+        authorization: `Bearer ${token}`,
+      },
+      body,
+      duplex: "half",
+    } as RequestInit);
+    const response = await POST({ request } as never);
+    expect(response.status).toBe(413);
+    // The stream's own read-ahead at most; an endless body was never drained.
+    expect(pulled).toBeLessThan(4);
+  });
+
+  it("stops reading an undeclared body at the limit", async () => {
+    // A chunked upload has no Content-Length to check. This one never ends.
+    let sent = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        sent += 65536;
+        controller.enqueue(new Uint8Array(65536).fill(0x20));
+      },
+    });
+    const request = new Request("http://localhost/api/ingest", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body,
+      duplex: "half",
+    } as RequestInit);
+    const response = await POST({ request } as never);
+    expect(response.status).toBe(413);
+    expect(sent).toBeLessThan(MAX_REQUEST_BYTES + 4 * 65536);
   });
 
   it("accepts an empty batch without touching anything", async () => {

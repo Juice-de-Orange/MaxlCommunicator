@@ -100,6 +100,7 @@ python3 firmware/scripts/check_layering.py   # layering rules (CLAUDE.md §3)
 
 cp web/.env.example web/.env                 # once -- then fill in the values it asks for
 (cd web && npm ci && npm run db:up && npm run db:migrate && npm test)   # dashboard, real PostgreSQL 17
+# `npm test` runs in its own database (`<name>_test`, created on first run) and leaves the one in DATABASE_URL alone
 
 android/tools/test.sh                        # Kotlin protocol core, in Docker
 android/tools/test.sh :app:testDebugUnitTest # connection flow and event store (needs the Android SDK)

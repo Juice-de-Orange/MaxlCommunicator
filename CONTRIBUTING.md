@@ -26,6 +26,10 @@ cd web && cp .env.example .env && npm ci && npm run db:up && npm run db:migrate 
 android/tools/test.sh
 ```
 
+The dashboard tests need a PostgreSQL 17 (`npm run db:up`) but not its data: they create and
+migrate their own database, named after the one in `DATABASE_URL` with `_test` appended, and
+refuse to empty anything else. `npm run db:migrate` is for the development database itself.
+
 Firmware builds need PlatformIO (`pip install "platformio==6.1.19"`); `pio run -e debug` and
 `pio run -e release` in `firmware/`.
 

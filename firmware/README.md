@@ -62,7 +62,7 @@ via `scripts/bringup_flag.py`).
 ## Checking without a device
 
 ```bash
-firmware/tools/hosttest.sh        # 255 cases, two simulations, in Docker
+firmware/tools/hosttest.sh        # 276 cases, two simulations, in Docker
 python3 firmware/scripts/check_layering.py
 python3 firmware/scripts/check_no_alloc.py
 python3 firmware/scripts/check_size.py    # Gate 0.6

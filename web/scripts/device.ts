@@ -15,8 +15,10 @@ import { eq } from "drizzle-orm";
 
 import { createDatabase } from "../src/db/client";
 import { loadDotEnv } from "../src/db/env";
+import { describeDatabaseError } from "../src/db/errors";
 import { devices } from "../src/db/schema";
 import { generateIngestToken, hashIngestToken } from "../src/lib/auth";
+import { MAX_NODE_ID, parseNodeId } from "../src/lib/node-id";
 
 function arg(name: string): string | undefined {
   const index = process.argv.indexOf(`--${name}`);
@@ -48,10 +50,10 @@ function printToken(nodeId: number, name: string, token: string): void {
 
 try {
   if (command === "add") {
-    const nodeId = Number.parseInt(arg("node-id") ?? "", 10);
+    const nodeId = parseNodeId(arg("node-id"));
     const name = arg("name");
-    if (!Number.isInteger(nodeId) || nodeId < 0 || nodeId > 0xffff || !name) {
-      console.error('usage: device add --node-id <0..65535> --name "<label>"');
+    if (nodeId === null || !name) {
+      console.error(`usage: device add --node-id <0..${MAX_NODE_ID}> --name "<label>"`);
       process.exit(2);
     }
     // 0xFFFF is broadcast in the frame header (CLAUDE.md 2.1) and can never be
@@ -61,10 +63,28 @@ try {
       process.exit(2);
     }
     const token = generateIngestToken();
-    await db.insert(devices).values({ nodeId, name, ingestTokenHash: hashIngestToken(token) });
+    // ON CONFLICT rather than catching the unique violation: an existing node
+    // is an answer, not a failure, and the error it used to raise carried the
+    // new token's hash among its parameters.
+    const [row] = await db
+      .insert(devices)
+      .values({ nodeId, name, ingestTokenHash: hashIngestToken(token) })
+      .onConflictDoNothing({ target: devices.nodeId })
+      .returning({ id: devices.id });
+    if (!row) {
+      console.error(
+        `node ${nodeId} is already registered -- nothing was changed. ` +
+          `For a new token: device rotate --node-id ${nodeId}`,
+      );
+      process.exit(1);
+    }
     printToken(nodeId, name, token);
   } else if (command === "rotate") {
-    const nodeId = Number.parseInt(arg("node-id") ?? "", 10);
+    const nodeId = parseNodeId(arg("node-id"));
+    if (nodeId === null) {
+      console.error(`usage: device rotate --node-id <0..${MAX_NODE_ID}>`);
+      process.exit(2);
+    }
     const token = generateIngestToken();
     const [row] = await db
       .update(devices)
@@ -91,6 +111,11 @@ try {
     console.error("usage: device <add|rotate|list> [...]");
     process.exit(2);
   }
+} catch (error) {
+  // One line, and never the query's parameters: for `add` and `rotate` one of
+  // them is the hash of the token that was just generated.
+  console.error(`device ${command} failed: ${describeDatabaseError(error)}`);
+  process.exitCode = 1;
 } finally {
-  await sql.end();
+  await sql.end({ timeout: 1 }).catch(() => {});
 }

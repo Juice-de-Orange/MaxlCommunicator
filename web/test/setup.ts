@@ -6,8 +6,17 @@
  */
 
 import { loadDotEnv } from "../src/db/env";
+import { testDatabaseUrl } from "./database";
 
 // Shared with `npm run db:migrate`, which needs exactly the same thing. When it
 // lived only here, the migration script could not see `.env` and the documented
 // flow in web/README.md worked only by accident.
 loadDotEnv(new URL("../.env", import.meta.url));
+
+// Real, but not the one `DATABASE_URL` names: the suite empties every table, so
+// it runs in that database's `_test` sibling (test/database.ts), which
+// test/global-setup.ts has created and migrated. Everything under test reads
+// `DATABASE_URL`, so this is the one place that has to know.
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = testDatabaseUrl(process.env.DATABASE_URL);
+}
