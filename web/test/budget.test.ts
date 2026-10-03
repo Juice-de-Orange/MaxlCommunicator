@@ -63,7 +63,12 @@ beforeAll(() => {
   database = createDatabase(url, { max: 4 });
 });
 
-beforeEach(async () => {
+/*
+ * The suite runs against the development database (`npm run db:up`), so it
+ * takes its rows away again when it is done -- otherwise the last test's node
+ * is the first thing in the dashboard's node list.
+ */
+async function wipe(): Promise<void> {
   const { db } = database;
   await db.delete(messages);
   await db.delete(linkStats);
@@ -72,6 +77,11 @@ beforeEach(async () => {
   await db.delete(deviceState);
   await db.delete(events);
   await db.delete(devices);
+}
+
+beforeEach(async () => {
+  const { db } = database;
+  await wipe();
 
   token = generateIngestToken();
   const [row] = await db
@@ -82,6 +92,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
+  await wipe();
   await database.sql.end();
 });
 

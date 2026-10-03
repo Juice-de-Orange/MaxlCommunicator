@@ -7,9 +7,28 @@
  * client, which is the one thing the bridge protocol is written to avoid.
  */
 
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+
 import { defineMiddleware } from "astro:middleware";
 
+import { loadDotEnv } from "./db/env";
 import { hasValidSession } from "./lib/auth";
+
+/*
+ * `.env`, once, before the first request is handled -- this module is loaded
+ * ahead of every page and endpoint, and they all read `process.env`.
+ *
+ * Without it `npm run dev` answered 500 "SESSION_SECRET is not set" with a
+ * filled-in `.env` sitting next to it: only `db:migrate` and the tests loaded
+ * the file, so the suite was green and the documented flow in web/README.md was
+ * not. Relative to the working directory rather than to this file, because in
+ * the built server this file is a chunk somewhere under dist/.
+ *
+ * The container has no `.env` and gets its variables from compose; a value that
+ * is already set is never overwritten.
+ */
+loadDotEnv(pathToFileURL(resolve(process.cwd(), ".env")));
 
 /*
  * Paths that authenticate themselves.
