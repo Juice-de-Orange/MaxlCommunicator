@@ -10,16 +10,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 
-import { createDatabase, type Database } from "../src/db/client";
+import type { Database } from "../src/db/client";
 import {
   configVersions,
-  deviceSamples,
-  deviceState,
   devices,
-  events,
-  linkStats,
-  messages,
-  peerObservations,
 } from "../src/db/schema";
 import {
   createSessionCookie,
@@ -30,6 +24,7 @@ import { GET, POST } from "../src/pages/api/config";
 import { POST as ingest } from "../src/pages/api/ingest";
 import { decodeConfigTlvs, encodeConfigTlvs, validateConfig } from "../src/lib/config-tlv";
 import { configApplied } from "./synth";
+import { openTestDatabase, wipe } from "./database";
 
 const NODE_ID = 0x0007;
 const SECRET = "0".repeat(64);
@@ -61,32 +56,13 @@ async function collect(bearer: string = token, nodeId: number = NODE_ID) {
 }
 
 beforeAll(() => {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL is not set -- run `npm run db:up`");
   process.env.SESSION_SECRET = SECRET;
-  database = createDatabase(url, { max: 4 });
+  database = openTestDatabase();
 });
-
-/*
- * The suite runs against the development database (`npm run db:up`), so it
- * takes its rows away again when it is done -- otherwise the last test's node
- * is the first thing in the dashboard's node list.
- */
-async function wipe(): Promise<void> {
-  const { db } = database;
-  await db.delete(messages);
-  await db.delete(linkStats);
-  await db.delete(peerObservations);
-  await db.delete(deviceSamples);
-  await db.delete(deviceState);
-  await db.delete(configVersions);
-  await db.delete(events);
-  await db.delete(devices);
-}
 
 beforeEach(async () => {
   const { db } = database;
-  await wipe();
+  await wipe(database);
 
   token = generateIngestToken();
   const [row] = await db
@@ -97,7 +73,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await wipe();
+  await wipe(database);
   await database.sql.end();
 });
 
@@ -203,6 +179,12 @@ describe("pushing", () => {
   it("answers 404 for a node that does not exist", async () => {
     expect((await push({ band: 1 }, 0x1234)).status).toBe(404);
   });
+
+  it.each([1.5, 2 ** 40, -1, 0x10000])("answers 400, not 500, for the node id %s", async (nodeId) => {
+    const response = await push({ band: 1 }, nodeId);
+    expect(response.status).toBe(400);
+    expect((await response.json()).detail).toBe("nodeId must be an integer between 0 and 65535");
+  });
 });
 
 describe("collecting", () => {
@@ -260,6 +242,12 @@ describe("collecting", () => {
     expect((await ingest({ request } as never)).status).toBe(200);
 
     expect((await (await collect()).json()).pending).toBeNull();
+  });
+
+  it.each(["99999999999", "1.5", "abc", ""])("answers 401, not 500, for ?nodeId=%s", async (nodeId) => {
+    const url = new URL(`http://localhost/api/config?nodeId=${nodeId}`);
+    const request = new Request(url, { headers: { authorization: `Bearer ${token}` } });
+    expect((await GET({ request, url } as never)).status).toBe(401);
   });
 
   it("answers 401 for an unknown node the same way as for a bad token", async () => {

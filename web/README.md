@@ -49,8 +49,8 @@ cd web
 cp .env.example .env   # once; set POSTGRES_PASSWORD (twice), DASHBOARD_PASSWORD, SESSION_SECRET
 npm ci
 npm run db:up          # PostgreSQL 17 in a container, on 127.0.0.1:5433
-npm run db:migrate     # create the schema — the tests do not
-npm test               # against the real database -- it empties the tables, before and after
+npm run db:migrate     # create the schema in the development database
+npm test               # real PostgreSQL, but its own database -- see below
 npm run build:all      # PWA + dashboard
 npm run dev            # http://localhost:4321
 ```
@@ -59,6 +59,13 @@ npm run dev            # http://localhost:4321
 variable that is already set in the environment wins. `WEB_PORT` is the published port of the
 container deployment and does not apply to `npm run dev`: that is Astro's 4321 unless you pass
 one, `npm run dev -- --port 4400`.
+
+**The tests never touch the database `DATABASE_URL` names.** They empty every table before and
+after each file, so they run in a sibling database with `_test` appended (`maxl` → `maxl_test`),
+which `npm test` creates on first use and migrates on every run; a `DATABASE_URL` that already
+ends in `_test` is used as it is. The role needs the right to create a database once — the one from
+`.env.example` has it — and the helper that empties the tables asks the server for the database
+name first and refuses anything that does not end in `_test`.
 
 Nodes authenticate their uploads with a per-device ingest token:
 

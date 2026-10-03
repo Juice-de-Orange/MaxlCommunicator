@@ -21,6 +21,7 @@ import { getDatabase } from "../../db/client";
 import { rebuildProjections } from "../../db/apply-projections";
 import { devices, events } from "../../db/schema";
 import { bearerToken, hashIngestToken } from "../../lib/auth";
+import { isNodeId, NODE_ID_RULE } from "../../lib/node-id";
 
 export const prerender = false;
 
@@ -44,11 +45,55 @@ interface IncomingBatch {
 const MAX_BODY_BYTES = 4096;
 const MAX_EVENTS_PER_BATCH = 512;
 
+/*
+ * The largest request a legitimate batch can be, derived from the two limits
+ * above: 512 events, each a 4096-byte body in base64 plus its JSON envelope
+ * (five short fields and two timestamps -- 512 bytes is several times what the
+ * bridge writes). About 3 MB. Enforced on the raw bytes before anything is
+ * parsed: without it a token holder could post 30 MB and have all of it
+ * buffered and run through JSON.parse before the first check looked at it.
+ */
+const MAX_BODY_BASE64_CHARS = Math.ceil(MAX_BODY_BYTES / 3) * 4;
+const EVENT_ENVELOPE_BYTES = 512;
+export const MAX_REQUEST_BYTES =
+  MAX_EVENTS_PER_BATCH * (MAX_BODY_BASE64_CHARS + EVENT_ENVELOPE_BYTES) + 1024;
+
 function bad(status: number, error: string, detail?: string): Response {
   return new Response(JSON.stringify({ error, detail }), {
     status,
     headers: { "content-type": "application/json" },
   });
+}
+
+/**
+ * The request body as text, or null once it exceeds `limit` bytes.
+ *
+ * Content-Length is checked first because it is free, but it is the client's
+ * claim; a chunked upload carries none. So the stream is counted as well, and
+ * abandoned at the limit rather than read to its end.
+ */
+async function readBodyUpTo(request: Request, limit: number): Promise<string | null> {
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (declared > limit) {
+    return null;
+  }
+  if (request.body === null) {
+    return "";
+  }
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 function parseEvent(raw: unknown, index: number): IncomingEvent | string {
@@ -97,15 +142,23 @@ export const POST: APIRoute = async ({ request }) => {
     return bad(401, "unauthorised", "Authorization: Bearer <ingest token> is required");
   }
 
+  const text = await readBodyUpTo(request, MAX_REQUEST_BYTES);
+  if (text === null) {
+    return bad(413, "request_too_large", `a request is at most ${MAX_REQUEST_BYTES} bytes`);
+  }
+
   let batch: IncomingBatch;
   try {
-    batch = (await request.json()) as IncomingBatch;
+    batch = JSON.parse(text) as IncomingBatch;
   } catch {
     return bad(400, "bad_request", "body is not JSON");
   }
 
   if (typeof batch?.nodeId !== "number" || !Array.isArray(batch.events)) {
     return bad(400, "bad_request", "expected { nodeId: number, events: [...] }");
+  }
+  if (!isNodeId(batch.nodeId)) {
+    return bad(400, "bad_request", NODE_ID_RULE);
   }
   if (batch.events.length > MAX_EVENTS_PER_BATCH) {
     return bad(413, "batch_too_large", `at most ${MAX_EVENTS_PER_BATCH} events per request`);

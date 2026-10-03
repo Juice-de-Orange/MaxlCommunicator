@@ -9,6 +9,12 @@ export function relativeTime(at: Date | null | undefined): string {
   return `${Math.round(seconds / 86400)} d ago`;
 }
 
+/*
+ * Rendered on the server, in the server's time zone -- which in the container is
+ * UTC and on the operator's wall is not. So the zone is part of the text
+ * ("03/10, 14:05 UTC"); a bare "14:05" read as local time is two hours wrong in
+ * a Central European summer.
+ */
 export function absoluteTime(at: Date | null | undefined): string {
   if (!at) return "—";
   return at.toLocaleString("en-GB", {
@@ -16,6 +22,7 @@ export function absoluteTime(at: Date | null | undefined): string {
     month: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    timeZoneName: "short",
   });
 }
 

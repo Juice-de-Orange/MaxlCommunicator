@@ -12,6 +12,10 @@ export default defineConfig({
     },
   },
   test: {
+    // Creates and migrates the tests' own database (`<name>_test`) once; the
+    // setup file then points every test file at it. The suite empties its
+    // tables, so it must never run in the database DATABASE_URL names.
+    globalSetup: ["./test/global-setup.ts"],
     setupFiles: ["./test/setup.ts"],
     // The database tests talk to a real PostgreSQL 17 in Docker, not to a mock.
     // Gate 7.1 is about an ON CONFLICT clause and gate 7.2 about ordering, and

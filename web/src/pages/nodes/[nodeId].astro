@@ -23,11 +23,14 @@ import {
   MESSAGE_STATE_LABEL,
   relativeTime,
 } from "../../lib/format";
+import { parseNodeId } from "../../lib/node-id";
 
 export const prerender = false;
 
-const nodeId = Number.parseInt(Astro.params.nodeId ?? "", 10);
-if (!Number.isInteger(nodeId)) return Astro.redirect("/");
+// "/nodes/abc" is no more a node than "/nodes/9" on a network of two: 404 for
+// both, rather than a redirect that answers 200 for an address that names nothing.
+const nodeId = parseNodeId(Astro.params.nodeId);
+if (nodeId === null) return new Response("No such node", { status: 404 });
 
 const node = await nodeByNodeId(nodeId);
 if (!node) return new Response("No such node", { status: 404 });

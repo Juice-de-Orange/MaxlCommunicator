@@ -79,7 +79,12 @@ COPY bridge/ /src/bridge/
 COPY web/ ./
 # The PWA lands under /app/ on the finished server.
 COPY --from=bridge-build /src/bridge/dist ./public/app
-RUN npm run build
+# The public host name behind the TLS proxy (docs/DEPLOYMENT.md). Astro writes
+# it into the server at build time -- it is what the cross-site check compares
+# the browser's Origin with -- so it is a build argument, declared this late so
+# that changing it does not invalidate the `npm ci` layer above.
+ARG DASHBOARD_HOST=""
+RUN DASHBOARD_HOST="$DASHBOARD_HOST" npm run build
 
 # Reduce the very same tree to what the server needs, rather than installing a
 # second one in the runtime stage.
@@ -107,6 +112,11 @@ COPY --from=web-build /src/web/src/lib ./src/lib
 COPY --from=web-build /src/web/scripts ./scripts
 COPY web/docker-entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
+
+# What the server above was built for, so the entrypoint can tell a changed
+# DASHBOARD_HOST from one that is in effect.
+ARG DASHBOARD_HOST=""
+ENV MAXL_BUILT_FOR_HOST=$DASHBOARD_HOST
 
 # Never root. The process needs to read its own files and nothing else.
 USER node

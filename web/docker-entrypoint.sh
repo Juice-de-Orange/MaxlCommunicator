@@ -11,6 +11,15 @@
 # wagging the dog.
 set -e
 
+# DASHBOARD_HOST is compiled into the server (see the Dockerfile). Changing it in
+# .env and restarting without a rebuild would leave the old host in force, and
+# the symptom is a login form that answers 403 -- so say it here instead.
+if [ -n "${DASHBOARD_HOST:-}" ] && [ "${DASHBOARD_HOST}" != "${MAXL_BUILT_FOR_HOST:-}" ]; then
+  echo "DASHBOARD_HOST is '${DASHBOARD_HOST}', but this image was built for '${MAXL_BUILT_FOR_HOST:-}'." >&2
+  echo "Rebuild it: docker compose up -d --build" >&2
+  exit 1
+fi
+
 echo "applying migrations"
 ./node_modules/.bin/tsx src/db/migrate.ts
 

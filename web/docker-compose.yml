@@ -4,7 +4,7 @@
 # Runs anywhere. For a public deployment put a TLS-terminating reverse proxy in
 # front of it -- Web Bluetooth needs a secure context (docs/DEPLOYMENT.md).
 #
-#   docker compose up -d postgres          just the database, for local tests
+#   docker compose up -d postgres          just the database, for local work and tests
 #   docker compose up -d                   the whole stack
 # =============================================================================
 # Without this, compose derives the project name from the directory -- and this
@@ -44,10 +44,17 @@ services:
       # root and not this directory.
       context: ..
       dockerfile: web/Dockerfile
+      args:
+        # The public host name behind the TLS proxy. Built into the server, so
+        # a change needs `docker compose up -d --build` (docs/DEPLOYMENT.md 3).
+        DASHBOARD_HOST: ${DASHBOARD_HOST:-}
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-maxl}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-maxl}
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?set DASHBOARD_PASSWORD in .env}
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      # Only so the entrypoint can refuse to start an image built for another
+      # host; the value that counts is the build argument above.
+      DASHBOARD_HOST: ${DASHBOARD_HOST:-}
       HOST: 0.0.0.0
       PORT: "4321"
     ports:

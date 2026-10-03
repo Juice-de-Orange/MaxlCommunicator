@@ -18,19 +18,16 @@
 import { beforeAll, beforeEach, afterAll, describe, expect, it } from "vitest";
 import { asc, eq } from "drizzle-orm";
 
-import { createDatabase, type Database } from "../src/db/client";
+import type { Database } from "../src/db/client";
 import {
   deviceSamples,
   deviceState,
   devices,
-  events,
-  linkStats,
-  messages,
-  peerObservations,
 } from "../src/db/schema";
 import { generateIngestToken, hashIngestToken } from "../src/lib/auth";
 import { POST } from "../src/pages/api/ingest";
 import { budget, status, type SynthEvent } from "./synth";
+import { openTestDatabase, wipe } from "./database";
 
 const NODE_ID = 0x0042;
 const LIMIT_MS = 360_000; // g3, CLAUDE.md 1.3
@@ -58,30 +55,12 @@ async function post(events: SynthEvent[]): Promise<Response> {
 }
 
 beforeAll(() => {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL is not set -- run `npm run db:up`");
-  database = createDatabase(url, { max: 4 });
+  database = openTestDatabase();
 });
-
-/*
- * The suite runs against the development database (`npm run db:up`), so it
- * takes its rows away again when it is done -- otherwise the last test's node
- * is the first thing in the dashboard's node list.
- */
-async function wipe(): Promise<void> {
-  const { db } = database;
-  await db.delete(messages);
-  await db.delete(linkStats);
-  await db.delete(peerObservations);
-  await db.delete(deviceSamples);
-  await db.delete(deviceState);
-  await db.delete(events);
-  await db.delete(devices);
-}
 
 beforeEach(async () => {
   const { db } = database;
-  await wipe();
+  await wipe(database);
 
   token = generateIngestToken();
   const [row] = await db
@@ -92,7 +71,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await wipe();
+  await wipe(database);
   await database.sql.end();
 });
 

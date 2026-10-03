@@ -28,6 +28,7 @@ import {
   validateConfig,
   type ConfigSettings,
 } from "../../lib/config-tlv";
+import { isNodeId, NODE_ID_RULE, parseNodeId } from "../../lib/node-id";
 
 export const prerender = false;
 
@@ -53,6 +54,9 @@ export const POST: APIRoute = async ({ request }) => {
   if (typeof payload.nodeId !== "number" || typeof payload.settings !== "object"
       || payload.settings === null) {
     return json(400, { error: "bad_request", detail: "expected { nodeId, settings }" });
+  }
+  if (!isNodeId(payload.nodeId)) {
+    return json(400, { error: "bad_request", detail: NODE_ID_RULE });
   }
 
   const problem = validateConfig(payload.settings);
@@ -113,8 +117,10 @@ export const POST: APIRoute = async ({ request }) => {
  */
 export const GET: APIRoute = async ({ request, url }) => {
   const token = bearerToken(request);
-  const nodeId = Number.parseInt(url.searchParams.get("nodeId") ?? "", 10);
-  if (!token || !Number.isInteger(nodeId)) {
+  // Not a node id at all answers like an unknown node, as before -- and no
+  // longer reaches the query, where 99999999999 was a 500.
+  const nodeId = parseNodeId(url.searchParams.get("nodeId"));
+  if (!token || nodeId === null) {
     return json(401, { error: "unauthorised" });
   }
 
