@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm") version "1.9.22" apply false
     kotlin("android") version "1.9.22" apply false
-    id("com.android.application") version "8.2.2" apply false
+    id("com.android.application") version "9.4.1" apply false
 }
 
 // Repositories are declared in settings.gradle.kts, for both plugins and
