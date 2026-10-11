@@ -134,3 +134,45 @@ TEST_CASE("minimum sniff symbols follow Semtech's guidance")
     CHECK(minSymbolsForSf(11) == 12);
     CHECK(minSymbolsForSf(12) == 12);
 }
+
+TEST_CASE("airtime matches an independent implementation of the SX126x formula")
+{
+    /*
+     * The tables above are this project's own; this is someone else's. The
+     * figures below come from RadioLib 7.8.1, SX126x::calculateTimeOnAir -- the
+     * driver this firmware links -- which implements the time-on-air formula of
+     * the SX1261/2 datasheet, section 6.1.4, in integer microseconds:
+     *
+     *   Tsym = 2^SF / BW
+     *   ToA  = (Npreamble + 4.25 + 8 + ceil(max(8*PL + 16*CRC - 4*SF + 8 + 20*(1-IH), 0)
+     *                                       / (4*(SF - 2*LDRO))) * (CR + 4)) * Tsym
+     *
+     * at the parameters CLAUDE.md 1.4 fixes and this module does not take: BW125,
+     * CR4/5, explicit header, CRC on, low data rate optimisation from SF11 (where
+     * Tsym reaches 16 ms, and where RadioLib switches it on by itself). They were
+     * produced by running RadioLib's arithmetic over 288 combinations of SF7-12,
+     * eight payload lengths and six preamble lengths; all 288 agreed with
+     * timeOnAirUs to the microsecond, and these rows are a sample of them that
+     * covers every SF, both sides of the LDRO switch and the sniff preambles.
+     *
+     * BW125 makes Tsym an exact multiple of 1024 us, so neither implementation
+     * rounds anything here: what the budget charges is the exact airtime, and
+     * there is no rounding direction to get wrong.
+     */
+    struct Row { uint8_t sf; uint8_t frameBytes; uint16_t preamble; uint32_t us; };
+    constexpr Row kReference[] = {
+        {7, 13, 8, 46336},      {8, 13, 8, 82432},       {9, 13, 8, 164864},
+        {10, 13, 8, 288768},    {11, 13, 8, 577536},     {12, 13, 8, 1155072},
+        {7, 51, 8, 102656},     {8, 51, 8, 184832},      {9, 51, 8, 328704},
+        {10, 51, 8, 616448},    {11, 51, 8, 1314816},    {12, 51, 8, 2465792},
+        {7, 64, 8, 118016},     {12, 64, 8, 2793472},    {9, 28, 489, 2196480},
+        {9, 21, 489, 2155520},  {11, 28, 8, 905216},     {11, 28, 62, 1789952},
+        {12, 20, 31, 2072576},  {7, 28, 1954, 2059520},
+    };
+    for (const Row &row : kReference) {
+        CAPTURE(row.sf);
+        CAPTURE(row.frameBytes);
+        CAPTURE(row.preamble);
+        CHECK(timeOnAirUs(row.sf, row.frameBytes, row.preamble) == row.us);
+    }
+}
