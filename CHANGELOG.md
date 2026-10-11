@@ -15,6 +15,16 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Firmware: the duty-cycle budget admitted a data frame as if it carried the 8-symbol preamble
+  (226 ms at the default configuration) while the radio sent it with the sniff preamble (2196 ms),
+  so the rolling hour could be overrun by up to one frame. The budget question, the retry timer and
+  GET_BUDGET's release time now use the frame as it is sent (#1). Host-tested; not yet verified on
+  hardware.
+- Firmware: the replay window's per-peer high-water mark is persisted, so a frame captured before a
+  receiver reboots is rejected after it. Marks are reserved 16 counter values ahead, written once
+  per block, and survive a factory reset like the frame counter (#2). Host-tested; not yet verified
+  on hardware.
+
 - Dashboard: login and logout answered 403 behind the reverse proxy that `docs/DEPLOYMENT.md`
   prescribes. The cross-site check stays on; set `DASHBOARD_HOST` and rebuild.
 - Dashboard: `npm test` emptied the database `DATABASE_URL` points at. The tests now run in their
