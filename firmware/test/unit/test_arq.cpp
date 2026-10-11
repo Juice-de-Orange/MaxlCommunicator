@@ -30,6 +30,11 @@ namespace {
 
 constexpr uint32_t kBootUnix = 1788000000u;
 
+/// The preamble most of these tests submit with. The state machine does not
+/// care which preamble a frame carries, only that the budget and the timer are
+/// asked about the same one -- the tests that care say so.
+constexpr uint16_t kShort = kStandardPreambleSymbols;
+
 /// A rig with a working clock, an empty budget and pinned jitter.
 struct Rig {
     FakeBlockStore store;
@@ -93,7 +98,7 @@ TEST_CASE("a broadcast is delivered as soon as it is sent")
     Rig rig;
     Frame frame(1, kBroadcastAddress);
     const size_t slot =
-        rig.arq.submit(frame.bytes, frame.length, 1, 9, Band::G3, false, rig.now());
+        rig.arq.submit(frame.bytes, frame.length, 1, 9, kShort, Band::G3, false, rig.now());
     REQUIRE(slot < kMaxOutstanding);
 
     const ArqOutcome sent = rig.runUntilAction(1000);
@@ -110,7 +115,8 @@ TEST_CASE("an acknowledged message is delivered on the first attempt")
 {
     Rig rig;
     Frame frame(7, 2);
-    const size_t slot = rig.arq.submit(frame.bytes, frame.length, 7, 9, Band::G3, true, rig.now());
+    const size_t slot =
+        rig.arq.submit(frame.bytes, frame.length, 7, 9, kShort, Band::G3, true, rig.now());
     REQUIRE(slot < kMaxOutstanding);
 
     const ArqOutcome sent = rig.runUntilAction(1000);
@@ -128,7 +134,8 @@ TEST_CASE("exactly three retries, then undelivered -- never silent")
     // docs/test-plan.md 2.5.
     Rig rig;
     Frame frame(3, 2);
-    const size_t slot = rig.arq.submit(frame.bytes, frame.length, 3, 9, Band::G3, true, rig.now());
+    const size_t slot =
+        rig.arq.submit(frame.bytes, frame.length, 3, 9, kShort, Band::G3, true, rig.now());
     REQUIRE(slot < kMaxOutstanding);
 
     int transmissions = 0;
@@ -175,7 +182,7 @@ TEST_CASE("a saturated budget queues rather than fails")
 
     Frame frame(9, 2);
     const size_t slot =
-        rig.arq.submit(frame.bytes, frame.length, 9, 12, Band::G1, true, rig.now());
+        rig.arq.submit(frame.bytes, frame.length, 9, 12, kShort, Band::G1, true, rig.now());
     REQUIRE(slot < kMaxOutstanding);
 
     // Poll for a while: it must not transmit, and it must not give up.
@@ -206,7 +213,7 @@ TEST_CASE("a node with no valid time holds the message instead of failing it")
     arq.begin(budget, jitter);
 
     Frame frame(5, 2);
-    const size_t slot = arq.submit(frame.bytes, frame.length, 5, 9, Band::G3, true, 0);
+    const size_t slot = arq.submit(frame.bytes, frame.length, 5, 9, kShort, Band::G3, true, 0);
     REQUIRE(slot < kMaxOutstanding);
 
     for (uint32_t ms = 0; ms < 60000u; ms += 500) {
@@ -233,7 +240,7 @@ TEST_CASE("the budget beats the retry timer, which is the whole point")
     Rig rig;
     Frame frame(11, 2);
     const size_t slot =
-        rig.arq.submit(frame.bytes, frame.length, 11, 12, Band::G1, true, rig.now());
+        rig.arq.submit(frame.bytes, frame.length, 11, 12, kShort, Band::G1, true, rig.now());
     REQUIRE(slot < kMaxOutstanding);
 
     const ArqOutcome first = rig.runUntilAction(5000);
@@ -266,8 +273,8 @@ TEST_CASE("stop-and-wait: only one message is on the air at a time")
     Rig rig;
     Frame a(1, 2);
     Frame b(2, 2);
-    const size_t slotA = rig.arq.submit(a.bytes, a.length, 1, 9, Band::G3, true, rig.now());
-    const size_t slotB = rig.arq.submit(b.bytes, b.length, 2, 9, Band::G3, true, rig.now());
+    const size_t slotA = rig.arq.submit(a.bytes, a.length, 1, 9, kShort, Band::G3, true, rig.now());
+    const size_t slotB = rig.arq.submit(b.bytes, b.length, 2, 9, kShort, Band::G3, true, rig.now());
     REQUIRE(slotA < kMaxOutstanding);
     REQUIRE(slotB < kMaxOutstanding);
 
@@ -308,7 +315,7 @@ TEST_CASE("the backoff grows and stays inside its jitter band")
         Arq arq;
         arq.begin(budget, jitter);
 
-        const size_t slot = arq.submit(frame.bytes, frame.length, 1, 9, Band::G3, true, 0);
+        const size_t slot = arq.submit(frame.bytes, frame.length, 1, 9, kShort, Band::G3, true, 0);
         REQUIRE(slot < kMaxOutstanding);
 
         uint32_t now = 0;
@@ -344,12 +351,12 @@ TEST_CASE("the queue reports when it is full rather than dropping")
     Rig rig;
     Frame frame(1, 2);
     for (size_t i = 0; i < kMaxOutstanding; ++i) {
-        CHECK(rig.arq.submit(frame.bytes, frame.length, static_cast<uint8_t>(i), 9, Band::G3,
-                             true, rig.now()) < kMaxOutstanding);
+        CHECK(rig.arq.submit(frame.bytes, frame.length, static_cast<uint8_t>(i), 9, kShort,
+                             Band::G3, true, rig.now()) < kMaxOutstanding);
     }
     CHECK(rig.arq.pending() == kMaxOutstanding);
     // ERR_QUEUE_FULL over the bridge (docs/bridge-protocol.md 4).
-    CHECK(rig.arq.submit(frame.bytes, frame.length, 99, 9, Band::G3, true, rig.now()) ==
+    CHECK(rig.arq.submit(frame.bytes, frame.length, 99, 9, kShort, Band::G3, true, rig.now()) ==
           kMaxOutstanding);
 }
 
@@ -358,7 +365,8 @@ TEST_CASE("slotOfActiveSeq finds the unresolved slot and nothing else")
     Rig rig;
     uint8_t frame[64] = {0};
 
-    const size_t slot = rig.arq.submit(frame, sizeof(frame), 42, 9, Band::G3, true, rig.now());
+    const size_t slot =
+        rig.arq.submit(frame, sizeof(frame), 42, 9, kShort, Band::G3, true, rig.now());
     REQUIRE(slot < kMaxOutstanding);
 
     // Queued counts as active: an ACK can arrive while the budget holds a retry.
@@ -381,7 +389,8 @@ TEST_CASE("replaceFrame swaps the bytes and refuses a different length")
     for (size_t i = 0; i < sizeof(frame); ++i) {
         frame[i] = static_cast<uint8_t>(i);
     }
-    const size_t slot = rig.arq.submit(frame, sizeof(frame), 7, 9, Band::G3, true, rig.now());
+    const size_t slot =
+        rig.arq.submit(frame, sizeof(frame), 7, 9, kShort, Band::G3, true, rig.now());
     REQUIRE(slot < kMaxOutstanding);
 
     // A rebuilt retry has the same payload, so the same length -- anything else
@@ -402,4 +411,82 @@ TEST_CASE("replaceFrame swaps the bytes and refuses a different length")
     CHECK(std::memcmp(stored, rebuilt, len) == 0);
 
     CHECK(!rig.arq.replaceFrame(kMaxOutstanding, rebuilt, sizeof(rebuilt)));
+}
+
+TEST_CASE("the budget is asked about the frame with the preamble it is sent with")
+{
+    /*
+     * Issue #1. A data frame goes out with the preamble that spans the sniff
+     * interval -- 489 symbols at SF9 and the default 2 s (CLAUDE.md 2.3) -- and
+     * that frame, 2196 ms of it, is what has to fit the rolling hour. One
+     * second of g3 left: the 8-symbol version (226 ms) would fit, the real one
+     * must wait.
+     */
+    const uint16_t sniffPreamble = preambleSymbolsForInterval(9, 2000);
+    REQUIRE(sniffPreamble == 489);
+
+    for (const uint16_t preamble : {kShort, sniffPreamble}) {
+        Rig rig;
+        uint32_t toSpendUs = plan(Band::G3).airtimeBudgetMsPerHour * 1000u - 1000000u;
+        while (toSpendUs > 0) {
+            const uint32_t chunk = toSpendUs > 2000000u ? 2000000u : toSpendUs;
+            REQUIRE(rig.budget.recordTransmission(Band::G3, chunk));
+            toSpendUs -= chunk;
+        }
+        rig.clock.advanceSeconds(60);  // past the last frame's lockout
+        REQUIRE(rig.budget.remainingMs(Band::G3) == 1000u);
+
+        Frame frame(4, 2);
+        const size_t slot = rig.arq.submit(frame.bytes, frame.length, 4, 9, preamble, Band::G3,
+                                           true, rig.now());
+        REQUIRE(slot < kMaxOutstanding);
+        const ArqOutcome outcome = rig.arq.poll(rig.now());
+
+        CAPTURE(preamble);
+        if (preamble == kShort) {
+            CHECK(outcome.action == ArqAction::Transmit);
+        } else {
+            CHECK(outcome.action == ArqAction::Nothing);
+            CHECK(rig.arq.stateOf(slot) == DeliveryState::Queued);
+            CHECK(rig.arq.attemptsOf(slot) == 0);
+            // Released when the oldest record leaves the hour, and not before.
+            CHECK(rig.arq.releaseUnixOf(slot) == kBootUnix + kBudgetWindowSeconds);
+        }
+    }
+}
+
+TEST_CASE("the retry timer is sized from the frame as it is sent")
+{
+    // CLAUDE.md 2.4: 2 x expectedAirtime(SF) + 300 ms, with the expected
+    // airtime being the frame's own -- sniff preamble included.
+    FakeBlockStore store;
+    FakeClock clock;
+    clock.setUnix(kBootUnix);
+    DutyCycleBudget budget;
+    REQUIRE(budget.begin(store, clock));
+    FixedJitter jitter(500);  // the middle of the band: exactly the base
+    Arq arq;
+    arq.begin(budget, jitter);
+
+    const uint16_t sniffPreamble = preambleSymbolsForInterval(9, 2000);
+    Frame frame(1, 2);
+    const size_t slot =
+        arq.submit(frame.bytes, frame.length, 1, 9, sniffPreamble, Band::G3, true, 0);
+    REQUIRE(slot < kMaxOutstanding);
+    uint32_t now = 0;
+    REQUIRE(arq.poll(now).action == ArqAction::Transmit);
+    arq.onTransmitComplete(slot, now, true);
+
+    uint32_t waited = 0;
+    while (waited < 60000u) {
+        now += 10;
+        waited += 10;
+        if (arq.poll(now).action == ArqAction::Transmit) {
+            break;
+        }
+    }
+    const uint32_t base = 2u * timeOnAirMs(9, 28, sniffPreamble) + 300u;
+    CHECK(base == 2u * 2196u + 300u);
+    CHECK(waited >= base);
+    CHECK(waited <= base + 20u);
 }

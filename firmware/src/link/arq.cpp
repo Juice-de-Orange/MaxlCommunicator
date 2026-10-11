@@ -28,14 +28,20 @@ void Arq::begin(DutyCycleBudget &budget, IJitterSource &jitter)
     inFlightSlot_ = kMaxOutstanding;
 }
 
+uint32_t Arq::airtimeUs(const Message &message) const
+{
+    return timeOnAirUs(message.sf, static_cast<uint8_t>(message.frameLen),
+                       message.preambleSymbols);
+}
+
 uint32_t Arq::retryTimerMs(const Message &message) const
 {
     // CLAUDE.md 2.4: 2 x expectedAirtime(SF) + 300 ms. The expected airtime is
-    // the frame's own, which already carries whatever preamble the sniff interval
+    // the frame's own, which carries whatever preamble the sniff interval
     // demanded -- an ACK comes back with a short preamble, so this is generous,
     // and generous is the right direction for a timer that triggers retries.
-    const uint32_t airtimeMs =
-        timeOnAirMs(message.sf, static_cast<uint8_t>(message.frameLen), kStandardPreambleSymbols);
+    const uint32_t airtimeMs = timeOnAirMs(message.sf, static_cast<uint8_t>(message.frameLen),
+                                           message.preambleSymbols);
     return 2u * airtimeMs + kRetryTimerSlackMs;
 }
 
@@ -93,9 +99,14 @@ uint32_t Arq::budgetGate(Message &message, uint32_t nowMs)
         return 0;
     }
 
-    const uint32_t airtimeUs = timeOnAirUs(
-        message.sf, static_cast<uint8_t>(message.frameLen), kStandardPreambleSymbols);
-    const uint32_t delayMs = budget_->earliestLegalTxDelayMs(message.band, airtimeUs);
+    /*
+     * The airtime of the frame as the radio will send it, preamble and all
+     * (issue #1). Asking with a shorter frame than the one that goes out is
+     * asking the wrong question: the hourly total would admit it and the charge
+     * that follows the transmission would take the band past its allowance.
+     */
+    const uint32_t frameAirtimeUs = airtimeUs(message);
+    const uint32_t delayMs = budget_->earliestLegalTxDelayMs(message.band, frameAirtimeUs);
 
     if (delayMs == kNeverLegalDelay) {
         /*
@@ -112,13 +123,13 @@ uint32_t Arq::budgetGate(Message &message, uint32_t nowMs)
         // Waiting on the budget is a different thing from retrying, and the user
         // is shown a different thing (CLAUDE.md 2.4).
         message.state = DeliveryState::Queued;
-        message.releaseUnix = budget_->earliestLegalTxUnix(message.band, airtimeUs);
+        message.releaseUnix = budget_->earliestLegalTxUnix(message.band, frameAirtimeUs);
     }
     return delayMs;
 }
 
-size_t Arq::submit(const uint8_t *frame, size_t frameLen, uint8_t seq, uint8_t sf, Band band,
-                   bool ackRequested, uint32_t nowMs)
+size_t Arq::submit(const uint8_t *frame, size_t frameLen, uint8_t seq, uint8_t sf,
+                   uint16_t preambleSymbols, Band band, bool ackRequested, uint32_t nowMs)
 {
     if (frame == nullptr || frameLen == 0 || frameLen > kMaxFrameBytes) {
         return kMaxOutstanding;
@@ -136,6 +147,7 @@ size_t Arq::submit(const uint8_t *frame, size_t frameLen, uint8_t seq, uint8_t s
         message.frameLen = frameLen;
         message.seq = seq;
         message.sf = sf;
+        message.preambleSymbols = preambleSymbols;
         message.band = band;
         message.ackRequested = ackRequested;
         message.attempts = 0;

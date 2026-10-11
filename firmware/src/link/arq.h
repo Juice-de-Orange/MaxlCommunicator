@@ -104,10 +104,19 @@ public:
      * `frameLen` is the whole on-air frame. `ackRequested` is false for broadcast
      * -- CLAUDE.md 2.4: "Broadcast frames never request an ACK."
      *
+     * `preambleSymbols` is the preamble the radio will send this frame with --
+     * for a data frame the one that spans the receiver's sniff interval
+     * (link::preambleSymbolsForInterval, CLAUDE.md 2.3), not the 8-symbol
+     * standard. The budget is asked about, and the retry timer is sized from,
+     * the airtime of THAT frame. Issue #1: with the standard preamble here the
+     * budget admitted a data frame at a tenth of its real airtime (226 ms
+     * against 2196 ms at the default configuration), and the charge that
+     * followed it could push the rolling hour past the legal limit.
+     *
      * Returns the slot, or kMaxOutstanding if the queue is full.
      */
-    size_t submit(const uint8_t *frame, size_t frameLen, uint8_t seq, uint8_t sf, Band band,
-                  bool ackRequested, uint32_t nowMs);
+    size_t submit(const uint8_t *frame, size_t frameLen, uint8_t seq, uint8_t sf,
+                  uint16_t preambleSymbols, Band band, bool ackRequested, uint32_t nowMs);
 
     /// Drive the machine. Call often; it does nothing until something is due.
     ArqOutcome poll(uint32_t nowMs);
@@ -158,6 +167,7 @@ private:
         size_t frameLen;
         uint8_t seq;
         uint8_t sf;
+        uint16_t preambleSymbols;  ///< what the radio sends it with
         Band band;
         bool ackRequested;
         uint8_t attempts;      ///< transmissions so far
@@ -167,6 +177,8 @@ private:
         bool awaitingRadio;    ///< handed to the radio, completion not yet reported
     };
 
+    /// The frame's time on air as it is transmitted, preamble included.
+    uint32_t airtimeUs(const Message &message) const;
     uint32_t retryTimerMs(const Message &message) const;
     uint32_t backoffMs(const Message &message);
 
