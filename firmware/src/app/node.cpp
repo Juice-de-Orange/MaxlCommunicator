@@ -78,6 +78,13 @@ bool Node::begin(uint16_t nodeId)
      */
     const bool counterOk = counter_.begin(store_);
     const bool budgetOk = budget_.begin(store_, clock_);
+    /*
+     * The replay marks (issue #2). Not a condition for transmitting: a store
+     * that cannot hold them makes the guard refuse frames it could not refuse
+     * again after a reboot, which is a receive-side failure and is counted
+     * there (replaysRejected).
+     */
+    replay_.begin(store_);
     queue_.restore();
     // Bounded by the counter that was just restored: anything at or above it is
     // not something this device wrote. Without the bound one leftover record
@@ -543,7 +550,7 @@ uint8_t Node::rotateKey(uint8_t newSlot)
 uint8_t Node::factoryReset()
 {
     /*
-     * Every region except the frame counter's.
+     * Every region except the frame counter's and the replay marks.
      *
      * CLAUDE.md 2.1: "Monotonic per device, never reset, never reused." A
      * factory reset that erased this region would send the counter back to the
@@ -559,6 +566,15 @@ uint8_t Node::factoryReset()
     for (uint8_t region = 0; region < static_cast<uint8_t>(hal::StoreRegion::RegionCount);
          ++region) {
         if (static_cast<hal::StoreRegion>(region) == hal::StoreRegion::FrameCounter) {
+            continue;
+        }
+        /*
+         * Nor the replay marks, for the counter's reason seen from the other
+         * end. The network key is usually provisioned again after a reset, and
+         * every frame ever recorded under it would then authenticate -- a
+         * receiver that forgot its marks would accept each one again.
+         */
+        if (static_cast<hal::StoreRegion>(region) == hal::StoreRegion::ReplayMarks) {
             continue;
         }
         store_.erase(static_cast<hal::StoreRegion>(region));

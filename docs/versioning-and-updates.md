@@ -132,4 +132,9 @@ The frame counter does **not** reset on rotation. It never resets, for any reaso
 budget ring. It does **not** reset the frame counter — a device that came back from a reset
 with a counter of zero would reuse nonces against any peer that still remembered it.
 
-The counter is the one piece of state that survives everything.
+Nor does it erase the per-peer replay marks (`firmware/src/link/replay.h`), for the same reason
+seen from the receiving end: the network key is usually provisioned again after a reset, and
+every frame ever recorded under it would then authenticate. A receiver that had forgotten its
+marks would accept each of them again.
+
+The counter and the replay marks are the two pieces of state that survive everything.

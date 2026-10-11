@@ -347,6 +347,7 @@ Internal flash (1 MB, minus S140 SoftDevice ~152 KB and bootloader):
 
 External flash (ZD25WQ16B, 2 MiB, LittleFS via `Adafruit_SPIFlash`):
 - frame counter high-water mark (§2.1)
+- per-peer replay marks, reserved ahead like the counter (§2.1)
 - duty cycle budget ring (§1.2)
 - message queue with delivery state (Phase 3)
 - map tiles, if built (§3.3)

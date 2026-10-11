@@ -24,6 +24,7 @@
 #include "hal/i_block_store.h"
 #include "app/journal.h"
 #include "app/message_queue.h"
+#include "link/replay.h"
 
 namespace fakes {
 
@@ -40,6 +41,8 @@ public:
         // see app/message_queue.h.
         configure(hal::StoreRegion::MessageQueue, app::kBlobBytes, 1);
         configure(hal::StoreRegion::EventJournal, app::kJournalRecordBytes, app::kJournalCapacity);
+        configure(hal::StoreRegion::ReplayMarks, link::kReplayRecordBytes,
+                  link::kReplayRecordCapacity);
     }
 
     void configure(hal::StoreRegion region, size_t recordBytes, size_t maxRecords)

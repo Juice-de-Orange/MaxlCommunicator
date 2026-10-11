@@ -320,6 +320,8 @@ void setup()
         g_store.configureRegion(hal::StoreRegion::MessageQueue, app::kBlobBytes, 1);
         g_store.configureRegion(hal::StoreRegion::EventJournal, app::kJournalRecordBytes,
                                 app::kJournalCapacity);
+        g_store.configureRegion(hal::StoreRegion::ReplayMarks, link::kReplayRecordBytes,
+                                link::kReplayRecordCapacity);
         g_nodeOk = g_node.begin(0x0001);
     }
 
