@@ -399,6 +399,9 @@ private:
 #endif
 
     link::Band activeBand() const;
+    /// Airtime of a POSITION-sized data frame as it would go out now, for the
+    /// budget questions that are not about one particular frame.
+    uint32_t representativeAirtimeUs() const;
     bool journalEvent(uint8_t opcode, const uint8_t *body, size_t length);
     bool loadKeys();
     size_t buildFrame(uint16_t dst, link::FrameType type, const uint8_t *payload, size_t length,

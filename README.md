@@ -38,7 +38,7 @@ that can be verified without hardware on every build.
   a PWA (Web Bluetooth) and a native Android client implement it.
 - **Dashboard** with an append-only event log, projections, per-link radio statistics, duty-cycle
   history and remote configuration.
-- **Hardware-free verification**: 276 host test cases over the same sources the ARM build
+- **Hardware-free verification**: 290 host test cases over the same sources the ARM build
   compiles, two-node simulations, shared hand-written test vectors checked by firmware, PWA and
   Kotlin client, and build guards (layering, no dynamic allocation in `link/`/`app/`, flash budget,
   a release build that refuses a development key).
@@ -207,11 +207,23 @@ of phase 5. Phase 8 (map tiles) is not started. Every report is in `docs/test-re
 what each run does *not* answer; `docs/test-results/README.md` is the index. "Green in simulation"
 is never counted as passed.
 
-**Known issues that matter before anyone relies on it** (tracked as issues #1–#3): the ARQ computes
-data-frame airtime with an 8-symbol preamble while frames go out with ~123, so the duty-cycle budget
-is underestimated for data frames (#1); the replay window is not persisted, so a captured frame can
-be replayed against a freshly rebooted receiver (#2); and the ACK return path loses
-acknowledgements, which is why gates 2.1 and 2.4 are not passed (#3).
+**Known issues that matter before anyone relies on it:**
+
+- The ACK return path loses acknowledgements on the bench, which is why gates 2.1 and 2.4 are not
+  passed (#3). The cause is not confirmed on two devices yet.
+- Changing the band or the sniff interval over BLE does not retune the radio at once: the band's
+  frequency and power are applied only on the next spreading-factor change, and the first frame
+  after a sniff-interval change still carries the old preamble. Until then the budget is charged
+  for the configured band and preamble, not for what is on the air -- switching from g1 back to g3
+  can therefore let a radio still on 868.1 MHz use g3's 10 %. The configuration is not persisted,
+  so a reboot returns the node to its defaults (g3, 2 s), which the radio is tuned to.
+- After a receiver reboots, a peer's next few frames (at most 16 counter values) are refused once
+  as replays; the sender's retries go through. A message delivered just before a reboot can reach
+  the application twice if its ACK was lost, because the (src, seq) dedupe is not persisted.
+
+Fixed in firmware and verified on the host only, not yet on hardware: the duty-cycle budget now
+admits a data frame against the airtime it is actually sent with, sniff preamble included (#1),
+and the replay window's high-water mark survives a reboot (#2).
 
 ## Contributing
 

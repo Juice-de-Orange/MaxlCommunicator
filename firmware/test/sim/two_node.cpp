@@ -83,6 +83,12 @@ struct Node : public hal::IRadioObserver {
         applyModulation();
     }
 
+    /// The preamble every frame of this simulated node goes out with.
+    uint16_t airPreamble() const
+    {
+        return preambleSymbolsForInterval(sf.currentSf(), sniffIntervalMs);
+    }
+
     void applyModulation()
     {
         hal::Modulation modulation{};
@@ -90,7 +96,7 @@ struct Node : public hal::IRadioObserver {
         modulation.frequencyHz = plan(band).defaultHz;
         modulation.txPowerDbm = clampTxPowerDbm(band, 22);
         radio.setModulation(modulation);
-        radio.setPreambleLength(preambleSymbolsForInterval(sf.currentSf(), sniffIntervalMs));
+        radio.setPreambleLength(airPreamble());
     }
 
     /// Build and queue a POSITION frame to `peerAddress`.
@@ -124,8 +130,10 @@ struct Node : public hal::IRadioObserver {
         }
         const size_t frameLen = kHeaderBytes + sizeof(plain) + kMicBytes;
 
-        return arq.submit(frame, frameLen, header.seq, sf.currentSf(), band, wantAck, *now) <
-               kMaxOutstanding;
+        // This radio sends everything with the sniff preamble, so that is the
+        // airtime the budget is asked about -- the same figure it is charged.
+        return arq.submit(frame, frameLen, header.seq, sf.currentSf(), airPreamble(), band,
+                          wantAck, *now) < kMaxOutstanding;
     }
 
     void onFrameReceived(const uint8_t *data, size_t len, const hal::RxInfo &info) override
@@ -206,7 +214,7 @@ struct Node : public hal::IRadioObserver {
         // through the same scheduler as everything else. A budget-blocked ACK is
         // queued, not dropped (2.4).
         arq.submit(frame, kHeaderBytes + sizeof(plain) + kMicBytes, header.seq, sf.currentSf(),
-                   band, false, *now);
+                   airPreamble(), band, false, *now);
     }
 
     void onTransmitComplete(hal::RadioResult) override
@@ -218,8 +226,7 @@ struct Node : public hal::IRadioObserver {
         size_t frameLen = 0;
         (void)arq.frameOf(pendingSlot, &frameLen);
         const uint32_t airtimeUs =
-            timeOnAirUs(sf.currentSf(), static_cast<uint8_t>(frameLen),
-                        preambleSymbolsForInterval(sf.currentSf(), sniffIntervalMs));
+            timeOnAirUs(sf.currentSf(), static_cast<uint8_t>(frameLen), airPreamble());
 
         // Anything that transmits goes through the budget. There is no second
         // path (CLAUDE.md 6).

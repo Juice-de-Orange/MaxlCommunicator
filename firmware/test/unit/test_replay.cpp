@@ -7,9 +7,11 @@
 
 #include "doctest.h"
 
+#include "fakes/fake_block_store.h"
 #include "link/replay.h"
 
 using namespace link;
+using fakes::FakeBlockStore;
 
 TEST_CASE("the first frame from a peer establishes the mark")
 {
@@ -164,4 +166,140 @@ TEST_CASE("frames outside the dedupe leave the seq history untouched")
     CHECK(guard.admit(2, 12, 7, true) == link::ReplayVerdict::Duplicate);
     // And a non-participating frame never trips the check either way.
     CHECK(guard.admit(2, 13, 7, false) == link::ReplayVerdict::Accept);
+}
+
+// --- persistence across a reboot (issue #2) ---------------------------------
+
+TEST_CASE("the mark survives a power cut and everything at or below it is rejected")
+{
+    FakeBlockStore store;
+    {
+        ReplayGuard guard;
+        REQUIRE(guard.begin(store));
+        REQUIRE(guard.admit(0x0002, 1000, 1) == ReplayVerdict::Accept);
+        REQUIRE(guard.admit(0x0002, 1003, 2) == ReplayVerdict::Accept);
+    }
+    store.powerCut();
+
+    ReplayGuard rebooted;
+    REQUIRE(rebooted.begin(store));
+    CHECK(rebooted.knowsPeer(0x0002));
+    // Both frames seen before the reboot, and the reordering slot between them
+    // that was never seen: a receiver that cannot tell must refuse.
+    CHECK(rebooted.admit(0x0002, 1000, 1) == ReplayVerdict::Replayed);
+    CHECK(rebooted.admit(0x0002, 1003, 2) == ReplayVerdict::Replayed);
+    CHECK(rebooted.admit(0x0002, 1001, 3) == ReplayVerdict::Replayed);
+    // Up to the reserved mark, too -- that is the price of not writing per frame.
+    CHECK(rebooted.admit(0x0002, 1000 + kReplayMarkBlock, 4) == ReplayVerdict::Replayed);
+    // Past it, the peer is heard again.
+    CHECK(rebooted.admit(0x0002, 1001 + kReplayMarkBlock, 5) == ReplayVerdict::Accept);
+}
+
+TEST_CASE("the mark is written once per block, not once per frame")
+{
+    FakeBlockStore store;
+    ReplayGuard guard;
+    REQUIRE(guard.begin(store));
+    store.resetCounters();
+
+    // The first frame reserves; the next kReplayMarkBlock counters are covered.
+    for (uint32_t c = 500; c <= 500 + kReplayMarkBlock; ++c) {
+        REQUIRE(guard.admit(0x0002, c, static_cast<uint8_t>(c)) == ReplayVerdict::Accept);
+    }
+    CHECK(store.syncs == 1);
+    REQUIRE(guard.admit(0x0002, 501 + kReplayMarkBlock, 7) == ReplayVerdict::Accept);
+    CHECK(store.syncs == 2);
+}
+
+TEST_CASE("every peer comes back, through compaction too")
+{
+    FakeBlockStore store;
+    {
+        ReplayGuard guard;
+        REQUIRE(guard.begin(store));
+        // Far more reservations than the region holds records, across three
+        // peers: the region compacts, and no peer may be forgotten by it.
+        for (uint32_t step = 0; step < 3 * kReplayRecordCapacity; ++step) {
+            const uint16_t src = static_cast<uint16_t>(2 + step % 3);
+            const uint32_t counter = 100 + step * (kReplayMarkBlock + 1);
+            REQUIRE(guard.admit(src, counter, static_cast<uint8_t>(step)) == ReplayVerdict::Accept);
+        }
+    }
+    store.powerCut();
+    CHECK(store.count(hal::StoreRegion::ReplayMarks) <= kReplayRecordCapacity);
+
+    ReplayGuard rebooted;
+    REQUIRE(rebooted.begin(store));
+    for (uint16_t src = 2; src <= 4; ++src) {
+        CAPTURE(src);
+        CHECK(rebooted.knowsPeer(src));
+        // The last counter each peer had accepted is a replay now.
+        uint32_t last = 0;
+        for (uint32_t step = 0; step < 3 * kReplayRecordCapacity; ++step) {
+            if (2 + step % 3 == src) {
+                last = 100 + step * (kReplayMarkBlock + 1);
+            }
+        }
+        CHECK(rebooted.admit(src, last, 0xEE) == ReplayVerdict::Replayed);
+        CHECK(rebooted.highWaterMark(src) == last + kReplayMarkBlock);
+    }
+}
+
+TEST_CASE("a torn record cannot move a mark backwards")
+{
+    FakeBlockStore store;
+    {
+        ReplayGuard guard;
+        REQUIRE(guard.begin(store));
+        REQUIRE(guard.admit(0x0002, 9000, 1) == ReplayVerdict::Accept);
+    }
+    // A trailing record whose check does not match: a write the power cut tore.
+    uint8_t torn[kReplayRecordBytes] = {};
+    torn[0] = 1;
+    torn[4] = 0x02;
+    torn[6] = 0x05;  // mark 5, far below the real one
+    REQUIRE(store.append(hal::StoreRegion::ReplayMarks, torn, sizeof(torn))
+            == hal::StoreResult::Ok);
+
+    ReplayGuard rebooted;
+    REQUIRE(rebooted.begin(store));
+    CHECK(rebooted.highWaterMark(0x0002) == 9000 + kReplayMarkBlock);
+    CHECK(rebooted.admit(0x0002, 9000, 1) == ReplayVerdict::Replayed);
+}
+
+TEST_CASE("a mark that cannot be persisted is a frame that is not accepted")
+{
+    FakeBlockStore store;
+    ReplayGuard guard;
+    REQUIRE(guard.begin(store));
+    REQUIRE(guard.admit(0x0002, 100, 1) == ReplayVerdict::Accept);
+
+    store.failWritesAfter(0);
+    // Under the persisted mark: already covered, judged normally.
+    CHECK(guard.admit(0x0002, 105, 2) == ReplayVerdict::Accept);
+    // Past it: would need a new mark on flash, and there is none to be had.
+    CHECK(guard.admit(0x0002, 100 + kReplayMarkBlock + 1, 3) == ReplayVerdict::NotPersisted);
+    CHECK(guard.highWaterMark(0x0002) == 105);
+    // A new peer likewise.
+    CHECK(guard.admit(0x0003, 1, 1) == ReplayVerdict::NotPersisted);
+    CHECK_FALSE(guard.knowsPeer(0x0003));
+}
+
+TEST_CASE("a region that is not configured fails closed")
+{
+    FakeBlockStore store;
+    store.configure(hal::StoreRegion::ReplayMarks, 8, 64);  // wrong record size
+    ReplayGuard guard;
+    CHECK_FALSE(guard.begin(store));
+    CHECK(guard.admit(0x0002, 100, 1) == ReplayVerdict::NotPersisted);
+}
+
+TEST_CASE("reset forgets the RAM history but not the persisted marks")
+{
+    FakeBlockStore store;
+    ReplayGuard guard;
+    REQUIRE(guard.begin(store));
+    REQUIRE(guard.admit(0x0002, 100, 1) == ReplayVerdict::Accept);
+    guard.reset();
+    CHECK(guard.admit(0x0002, 100, 1) == ReplayVerdict::Replayed);
 }

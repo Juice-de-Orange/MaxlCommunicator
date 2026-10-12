@@ -36,9 +36,9 @@ uint16_t getU16(const uint8_t *in)
     return static_cast<uint16_t>(in[0] | (in[1] << 8));
 }
 
-/// A representative frame for "can I send anything at all". POSITION at SF9 is
-/// the shape the budget is usually asked about (CLAUDE.md 1.4).
-constexpr uint32_t kRepresentativeAirtimeUs = 226000;
+/// A representative frame for "can I send anything at all": POSITION, the
+/// shape the budget is usually asked about (CLAUDE.md 1.4).
+constexpr uint8_t kRepresentativeFrameBytes = 28;
 
 } // namespace
 
@@ -50,6 +50,20 @@ Node::Node(hal::IClock &clock, hal::IBlockStore &store, hal::IKeyStore &keys)
 link::Band Node::activeBand() const
 {
     return config_.band == 1 ? link::Band::G1 : link::Band::G3;
+}
+
+uint32_t Node::representativeAirtimeUs() const
+{
+    /*
+     * At the current SF and with the preamble a data frame actually carries
+     * (CLAUDE.md 2.3). Until issue #1 this was a constant 226 ms -- POSITION at
+     * SF9 with the 8-symbol preamble -- so "queued until" in GET_BUDGET could
+     * name a moment at which no real data frame was legal yet: at the default
+     * sniff interval the frame costs 2196 ms.
+     */
+    return link::timeOnAirUs(currentSf_, kRepresentativeFrameBytes,
+                             link::preambleSymbolsForInterval(currentSf_,
+                                                              config_.sniffIntervalMs));
 }
 
 bool Node::begin(uint16_t nodeId)
@@ -64,6 +78,13 @@ bool Node::begin(uint16_t nodeId)
      */
     const bool counterOk = counter_.begin(store_);
     const bool budgetOk = budget_.begin(store_, clock_);
+    /*
+     * The replay marks (issue #2). Not a condition for transmitting: a store
+     * that cannot hold them makes the guard refuse frames it could not refuse
+     * again after a reboot, which is a receive-side failure and is counted
+     * there (replaysRejected).
+     */
+    replay_.begin(store_);
     queue_.restore();
     // Bounded by the counter that was just restored: anything at or above it is
     // not something this device wrote. Without the bound one leftover record
@@ -229,7 +250,7 @@ size_t Node::budget(uint8_t *out, size_t max) const
      * (CLAUDE.md 2.4, and field test F.5). Zero means "now", which is a real
      * answer rather than a missing one.
      */
-    const uint32_t earliest = budget_.earliestLegalTxUnix(band, kRepresentativeAirtimeUs);
+    const uint32_t earliest = budget_.earliestLegalTxUnix(band, representativeAirtimeUs());
     putU32(out + 9, earliest == link::kNeverLegal ? 0 : earliest);
     return kBudgetBytes;
 }
@@ -529,7 +550,7 @@ uint8_t Node::rotateKey(uint8_t newSlot)
 uint8_t Node::factoryReset()
 {
     /*
-     * Every region except the frame counter's.
+     * Every region except the frame counter's and the replay marks.
      *
      * CLAUDE.md 2.1: "Monotonic per device, never reset, never reused." A
      * factory reset that erased this region would send the counter back to the
@@ -545,6 +566,15 @@ uint8_t Node::factoryReset()
     for (uint8_t region = 0; region < static_cast<uint8_t>(hal::StoreRegion::RegionCount);
          ++region) {
         if (static_cast<hal::StoreRegion>(region) == hal::StoreRegion::FrameCounter) {
+            continue;
+        }
+        /*
+         * Nor the replay marks, for the counter's reason seen from the other
+         * end. The network key is usually provisioned again after a reset, and
+         * every frame ever recorded under it would then authenticate -- a
+         * receiver that forgot its marks would accept each one again.
+         */
+        if (static_cast<hal::StoreRegion>(region) == hal::StoreRegion::ReplayMarks) {
             continue;
         }
         store_.erase(static_cast<hal::StoreRegion>(region));
@@ -578,7 +608,7 @@ uint8_t Node::linkTest(uint16_t dst, uint8_t count, uint8_t sf)
      * everything else and will return ERR_BUDGET_EXHAUSTED rather than queueing,
      * because a delayed link test is a useless link test."
      */
-    if (!budget_.canTransmit(activeBand(), kRepresentativeAirtimeUs)) {
+    if (!budget_.canTransmit(activeBand(), representativeAirtimeUs())) {
         return static_cast<uint8_t>(ble::BridgeError::BudgetExhausted);
     }
     return 0;
@@ -720,8 +750,13 @@ void Node::promoteQueued(uint32_t nowMs)
             continue;
         }
 
-        const size_t slot = arq_.submit(frame, frameLen, message.seq, currentSf_, activeBand(),
-                                        wantsAck, nowMs);
+        // The preamble the radio sends a data frame with: it spans the peer's
+        // sniff interval (CLAUDE.md 2.3), and the budget must be asked about
+        // that frame, not about an 8-symbol one (issue #1).
+        const uint16_t preamble =
+            link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs);
+        const size_t slot = arq_.submit(frame, frameLen, message.seq, currentSf_, preamble,
+                                        activeBand(), wantsAck, nowMs);
         if (slot >= link::kMaxOutstanding) {
             // The ARQ window is full. The message stays Pending and is offered
             // again next time round -- nothing is lost, it just waits.

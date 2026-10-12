@@ -101,6 +101,8 @@ const char *LittleFsBlockStore::pathOf(StoreRegion region)
         return "/queue";
     case StoreRegion::EventJournal:
         return "/journal";
+    case StoreRegion::ReplayMarks:
+        return "/replay";
     case StoreRegion::BenchScratch:
         return "/bench";
     default:
@@ -119,6 +121,8 @@ const char *LittleFsBlockStore::tempPathOf(StoreRegion region)
         return "/queue.new";
     case StoreRegion::EventJournal:
         return "/journal.new";
+    case StoreRegion::ReplayMarks:
+        return "/replay.new";
     case StoreRegion::BenchScratch:
         return "/bench.new";
     default:

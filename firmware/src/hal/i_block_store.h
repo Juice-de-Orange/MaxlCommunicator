@@ -47,6 +47,11 @@ enum class StoreRegion : uint8_t {
     /// ACK_QUEUE, which is what makes it safe to lose the phone mid-sync.
     EventJournal,
 
+    /// The per-peer replay marks (CLAUDE.md 2.1, link/replay.h). Survives a
+    /// reboot and FACTORY_RESET: a receiver that forgets what it accepted
+    /// accepts a captured frame a second time.
+    ReplayMarks,
+
     /*
      * Bring-up scratch. The application never touches it.
      *

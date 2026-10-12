@@ -330,6 +330,8 @@ void setup()
         g_store.configureRegion(hal::StoreRegion::MessageQueue, app::kBlobBytes, 1);
         g_store.configureRegion(hal::StoreRegion::EventJournal, app::kJournalRecordBytes,
                                 app::kJournalCapacity);
+        g_store.configureRegion(hal::StoreRegion::ReplayMarks, link::kReplayRecordBytes,
+                                link::kReplayRecordCapacity);
 
         /*
          * A false here is not a warning. CLAUDE.md 2.1: a device that cannot
