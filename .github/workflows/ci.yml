@@ -1,6 +1,6 @@
 # CI for trailtalk.
 #
-# Six jobs, deliberately separate, because they fail for different reasons and
+# Seven jobs, deliberately separate, because they fail for different reasons and
 # a developer should be able to tell which at a glance:
 #
 #   policy     source-level checks. No toolchain, seconds to run.
@@ -9,6 +9,7 @@
 #   bridge     the TypeScript client and its production build.
 #   dashboard  the Astro app, against a real PostgreSQL 17, and its build.
 #   android    the Kotlin client, both modules.
+#   image      the dashboard's Docker image, as docker-compose.yml builds it.
 #   secrets    gitleaks over the full history.
 #
 # The commands are the ones that pass locally in containers (see README "Quick
@@ -255,6 +256,19 @@ jobs:
 
       - run: gradle --no-daemon :app:assembleDebug
         working-directory: android
+
+  image:
+    # The dashboard image exactly as `web/docker-compose.yml` builds it (context = repo root,
+    # web/Dockerfile). Dependabot bumps the base image; without this job a base image that
+    # breaks the build would only show up on a user's `docker compose up --build`.
+    name: Dashboard image (docker build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build
+        run: docker build -f web/Dockerfile -t trailtalk-dashboard:ci .
 
   secrets:
     # Full-history secret scan on every PR and push. Same tool and version as
