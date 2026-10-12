@@ -5,6 +5,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-12
+
+The first public release, and the first under the name trailtalk: the project was called
+MaxlCommunicator until this release. Everything that runs without hardware is tested on every
+build. The two-node radio gates and the power measurements are not yet passed on real devices, and
+the firmware fixes below are host-tested only (README, "Status").
+
+### Added
+
+- First public release: firmware for the LilyGO T-Echo (radio link with AES-128-CCM, persistent
+  counters, ARQ, adaptive SF and duty-cycle enforcement; e-paper UI; BLE GATT bridge), the PWA
+  bridge, the native Android client (in progress), the dashboard with an append-only event log,
+  shared test vectors and the bring-up tooling.
+- Dashboard: `DASHBOARD_HOST`, the public host name behind a TLS-terminating reverse proxy.
+
 ### Changed
 
 - **Renamed from MaxlCommunicator to trailtalk.** The name changes in the README and the docs, the
@@ -20,14 +35,6 @@ All notable changes to this project are documented here. The format follows
   `BRIDGE_PROTO`, the firmware version, the PWA's storage names and the dashboard's session cookie.
   A dashboard whose `.env` predates the rename keeps running as the compose project `maxl` on its
   volume `maxl_pgdata`; `docs/DEPLOYMENT.md` ("Updating from MaxlCommunicator") has the details.
-
-### Added
-
-- First public release: firmware for the LilyGO T-Echo (radio link with AES-128-CCM, persistent
-  counters, ARQ, adaptive SF and duty-cycle enforcement; e-paper UI; BLE GATT bridge), the PWA
-  bridge, the native Android client (in progress), the dashboard with an append-only event log,
-  shared test vectors and the bring-up tooling.
-- Dashboard: `DASHBOARD_HOST`, the public host name behind a TLS-terminating reverse proxy.
 
 ### Fixed
 
