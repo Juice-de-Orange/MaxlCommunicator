@@ -626,7 +626,8 @@ uint8_t Node::rotateKey(uint8_t newSlot)
 uint8_t Node::factoryReset()
 {
     /*
-     * Every region except the frame counter's and the replay marks.
+     * Every region except the frame counter's, the replay marks and the duty
+     * cycle budget ring.
      *
      * CLAUDE.md 2.1: "Monotonic per device, never reset, never reused." A
      * factory reset that erased this region would send the counter back to the
@@ -651,6 +652,16 @@ uint8_t Node::factoryReset()
          * receiver that forgot its marks would accept each one again.
          */
         if (static_cast<hal::StoreRegion>(region) == hal::StoreRegion::ReplayMarks) {
+            continue;
+        }
+        /*
+         * Nor the budget ring (issue #40). FACTORY_RESET is one opcode from any
+         * bonded phone, and erasing the ring would hand back the rolling hour
+         * and the frame lockout at the next reboot: CLAUDE.md 1.2, "a budget
+         * that a power cycle can clear is not a budget". Airtime spent before
+         * a reset was still spent.
+         */
+        if (static_cast<hal::StoreRegion>(region) == hal::StoreRegion::BudgetRing) {
             continue;
         }
         store_.erase(static_cast<hal::StoreRegion>(region));
