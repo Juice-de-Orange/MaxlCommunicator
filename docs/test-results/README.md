@@ -12,6 +12,10 @@ Naming scheme: `YYYY-MM-DD_<subject>.md`, where `<subject>` is either a gate
 (`gate_0-3_flash_cycles`) or a topic block (`phase1_drivers`). A run that touches several
 gates gets one report and names all of them.
 
+Reports from before the project was renamed from MaxlCommunicator to trailtalk keep the old names
+— `MAXL_*` variables, `MAXL-BRINGUP` markers, `Maxl-XXXX`, `maxl-*.elf` — because they record what
+was built, run and printed at the time.
+
 ## Status
 
 | Report | Gates in it |

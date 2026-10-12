@@ -17,8 +17,8 @@
  * ViewModel, which is the property docs/test-plan.md gate 4.1 rests on.
  */
 
-#ifndef MAXL_UI_SCREENS_H
-#define MAXL_UI_SCREENS_H
+#ifndef TRAILTALK_UI_SCREENS_H
+#define TRAILTALK_UI_SCREENS_H
 
 #include "hal/canvas.h"
 #include "ui/view_model.h"
@@ -83,4 +83,4 @@ void renderPowerMenu(hal::Canvas &canvas, PowerMenuItem selected);
 
 } // namespace ui
 
-#endif // MAXL_UI_SCREENS_H
+#endif // TRAILTALK_UI_SCREENS_H

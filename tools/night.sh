@@ -122,7 +122,7 @@ for step in "${STEPS[@]}"; do
     log="$OUT/${STAMP}_sketch$(printf '%02d' "$sketch").log"
     printf -- "--- sketch %02d, waiting for %s (up to %ss) ---\n" "$sketch" "$key" "$timeout"
 
-    if ! MAXL_BRINGUP="$sketch" "$PY" -m platformio run -d "$ROOT/firmware" -e bringup \
+    if ! TRAILTALK_BRINGUP="$sketch" "$PY" -m platformio run -d "$ROOT/firmware" -e bringup \
             -t upload --upload-port "$PORT" >"$log" 2>&1; then
         echo "  -> FLASH FAILED  ($log)"
         failed+=("$sketch")

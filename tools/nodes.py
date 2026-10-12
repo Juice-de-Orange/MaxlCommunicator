@@ -34,8 +34,9 @@ NODES_INI = os.path.join(ROOT, "firmware", "nodes.ini")
 #
 # Neither the USB product id nor the product string identifies anything stable:
 # the UF2 bootloader says `T-Echo v1`, the LilyGO factory image says `TTGO_eink`
-# with product id 4405, and our own image says `MaxlCommunicator` with product id
-# 0029 -- the same id as the bootloader. All three are the same physical board.
+# with product id 4405, and our own image says `trailtalk` (`MaxlCommunicator`
+# before the rename) with product id 0029 -- the same id as the bootloader. All
+# three are the same physical board.
 # The first version of this file keyed on the product string and stopped finding
 # node B the moment we flashed it, which is exactly the failure it exists to
 # prevent.

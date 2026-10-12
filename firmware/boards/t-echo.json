@@ -14,7 +14,7 @@
       ["0x239A", "0x802A"],
       ["0x239A", "0x4405"]
     ],
-    "usb_product": "MaxlCommunicator",
+    "usb_product": "trailtalk",
     "mcu": "nrf52840",
     "variant": "t-echo",
     "variants_dir": "variants",
@@ -37,7 +37,7 @@
     "svd_path": "nrf52840.svd"
   },
   "frameworks": ["arduino"],
-  "name": "LilyGO T-Echo (MaxlCommunicator)",
+  "name": "LilyGO T-Echo (trailtalk)",
   "upload": {
     "maximum_ram_size": 248832,
     "maximum_size": 815104,

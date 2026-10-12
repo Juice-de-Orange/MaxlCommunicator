@@ -30,7 +30,7 @@
 
 #include "bringup.h"
 
-#if defined(MAXL_BRINGUP) && MAXL_BRINGUP == 11
+#if defined(TRAILTALK_BRINGUP) && TRAILTALK_BRINGUP == 11
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -195,7 +195,7 @@ void measure()
     /*
      * Progress lines, printed outside the report frame on purpose.
      *
-     * tools/bringup_run.py collects between "MAXL-BRINGUP 11 begin" and the
+     * tools/bringup_run.py collects between "TRAILTALK-BRINGUP 11 begin" and the
      * matching "end" and ignores everything before it, so these cost nothing in
      * the collected output -- and they are the difference between diagnosing a
      * hang in seconds and staring at a silent port for two minutes, which is
@@ -368,4 +368,4 @@ void loop()
 
 } // namespace bringup
 
-#endif // MAXL_BRINGUP == 11
+#endif // TRAILTALK_BRINGUP == 11

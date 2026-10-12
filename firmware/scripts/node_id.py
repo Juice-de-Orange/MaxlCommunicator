@@ -7,11 +7,11 @@ sending into an empty room. With two boards it is the one configuration that
 cannot work -- a frame addressed to 0x0002 that arrives at another 0x0001 is
 discarded by its own destination check, and neither side reports anything.
 
-    MAXL_NODE_ID=2 MAXL_BRINGUP=19 pio run -e bringup -t upload --upload-port ...
+    TRAILTALK_NODE_ID=2 TRAILTALK_BRINGUP=19 pio run -e bringup -t upload --upload-port ...
 
 Unset means 1, which keeps every existing single-node image behaving as before.
 
-This is a BENCH facility, like MAXL_DEV_KEY beside it. The shipping way to set a
+This is a BENCH facility, like TRAILTALK_DEV_KEY beside it. The shipping way to set a
 node id is over BLE (docs/bridge-protocol.md), and nothing here weakens that: the
 define only supplies the value `Node::begin()` starts from.
 """
@@ -21,9 +21,13 @@ import sys
 
 Import("env")  # noqa: F821  (injected by PlatformIO)
 
-NODE_ID_VAR = "MAXL_NODE_ID"
+# MAXL_NODE_ID, the name from before the rename, is still read with a warning.
+sys.path.insert(0, os.path.join(env["PROJECT_DIR"], "scripts"))  # noqa: F821
+import renamed_env  # noqa: E402
 
-raw = os.environ.get(NODE_ID_VAR, "").strip()
+NODE_ID_VAR = "TRAILTALK_NODE_ID"
+
+raw = renamed_env.getenv(NODE_ID_VAR)
 if not raw:
     node_id = 1
 else:
@@ -46,4 +50,4 @@ else:
 
     print("node id: 0x{:04X}".format(node_id))
 
-env.Append(CPPDEFINES=[("MAXL_NODE_ID", node_id)])  # noqa: F821
+env.Append(CPPDEFINES=[("TRAILTALK_NODE_ID", node_id)])  # noqa: F821

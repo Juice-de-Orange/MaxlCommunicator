@@ -26,18 +26,22 @@ namespace {
  * Bluefruit wants a 128-bit UUID least-significant byte first, so these are the
  * strings above reversed. Writing them the human way round produces a service no
  * client can find, and nothing anywhere reports an error.
+ *
+ * The first group spells `maxl`, the project's name before the rename to
+ * trailtalk. It stays: the UUIDs are the wire contract every client filters on,
+ * and changing them would make every phone lose every node.
  */
-#define MAXL_UUID(second_byte)                                                                  \
+#define TRAILTALK_UUID(second_byte)                                                             \
     {                                                                                           \
         0x00, 0x00, 0x65, 0x64, 0x6f, 0x4e, 0x61, 0x52, 0x6f, 0x4c, (second_byte), 0x00, 0x6c,  \
             0x78, 0x61, 0x6d                                                                    \
     }
 
-const uint8_t kServiceUuid[16] = MAXL_UUID(0x01);
-const uint8_t kTxUuid[16] = MAXL_UUID(0x02);
-const uint8_t kRxUuid[16] = MAXL_UUID(0x03);
-const uint8_t kConfigUuid[16] = MAXL_UUID(0x04);
-const uint8_t kStatusUuid[16] = MAXL_UUID(0x05);
+const uint8_t kServiceUuid[16] = TRAILTALK_UUID(0x01);
+const uint8_t kTxUuid[16] = TRAILTALK_UUID(0x02);
+const uint8_t kRxUuid[16] = TRAILTALK_UUID(0x03);
+const uint8_t kConfigUuid[16] = TRAILTALK_UUID(0x04);
+const uint8_t kStatusUuid[16] = TRAILTALK_UUID(0x05);
 
 /*
  * Braces, not parentheses.

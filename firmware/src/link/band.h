@@ -16,8 +16,8 @@
  * other side: txPowerDbm is "clamped by the per-band ceiling, never trusted".
  */
 
-#ifndef MAXL_LINK_BAND_H
-#define MAXL_LINK_BAND_H
+#ifndef TRAILTALK_LINK_BAND_H
+#define TRAILTALK_LINK_BAND_H
 
 #include <stdint.h>
 
@@ -76,4 +76,4 @@ constexpr uint32_t kMaxSniffIntervalMs = 10000;
 
 } // namespace link
 
-#endif // MAXL_LINK_BAND_H
+#endif // TRAILTALK_LINK_BAND_H

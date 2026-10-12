@@ -23,8 +23,8 @@
  * its inputs, and the tests would have to fake a clock to check a tag.
  */
 
-#ifndef MAXL_LINK_CRYPTO_H
-#define MAXL_LINK_CRYPTO_H
+#ifndef TRAILTALK_LINK_CRYPTO_H
+#define TRAILTALK_LINK_CRYPTO_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -128,4 +128,4 @@ private:
 
 } // namespace link
 
-#endif // MAXL_LINK_CRYPTO_H
+#endif // TRAILTALK_LINK_CRYPTO_H

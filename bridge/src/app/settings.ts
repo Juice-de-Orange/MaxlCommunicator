@@ -17,6 +17,9 @@ export interface Settings {
   deviceName: string | null;
 }
 
+// The project's name from before the rename to trailtalk, kept on purpose: this
+// key holds the node id and ingest token on phones that already use the app,
+// and a new key would make them pair from scratch.
 const KEY = "maxl-bridge-settings";
 
 const DEFAULTS: Settings = {

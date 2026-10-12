@@ -18,8 +18,8 @@
  * against a multimeter at three points.
  */
 
-#ifndef MAXL_HAL_BATTERY_ADC_H
-#define MAXL_HAL_BATTERY_ADC_H
+#ifndef TRAILTALK_HAL_BATTERY_ADC_H
+#define TRAILTALK_HAL_BATTERY_ADC_H
 
 #include "hal/i_battery.h"
 
@@ -81,4 +81,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_BATTERY_ADC_H
+#endif // TRAILTALK_HAL_BATTERY_ADC_H

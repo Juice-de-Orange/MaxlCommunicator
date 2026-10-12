@@ -1,9 +1,9 @@
 """Select the phase 0 bring-up sketch from the environment.
 
-    MAXL_BRINGUP=2 pio run -e bringup -t upload
+    TRAILTALK_BRINGUP=2 pio run -e bringup -t upload
 
 PlatformIO's ${sysenv.VAR} has no default, and an unset variable would expand to
-a bare `-DMAXL_BRINGUP=` that fails deep inside the preprocessor with a message
+a bare `-DTRAILTALK_BRINGUP=` that fails deep inside the preprocessor with a message
 about the wrong thing. Doing it here gives a default and, more importantly, one
 clear line in the build output saying which sketch is in the image -- which
 matters when the images differ only in what they touch and the device gives no
@@ -11,8 +11,13 @@ other clue about what is running on it.
 """
 
 import os
+import sys
 
 Import("env")  # noqa: F821  -- provided by SCons
+
+# The MAXL_* names from before the rename are still read, with a warning.
+sys.path.insert(0, os.path.join(env["PROJECT_DIR"], "scripts"))  # noqa: F821
+import renamed_env  # noqa: E402
 
 SKETCHES = {
     0: "dfu_escape -- prove the way back to the bootloader, no Serial, no bus",
@@ -34,16 +39,16 @@ SKETCHES = {
     16: "storage -- queue and journal on real flash across a real reset (gates 3.1, 3.2, 3.3)",
     17: "budget -- an hour of real transmission, then a reset (gates 2.7 and 2.8a). TRANSMITS.",
     18: "counter -- 50 forced power cycles, some mid-transmit (gate 2.6). TRANSMITS.",
-    19: "link -- TWO NODES, one key, one link. Gates 2.1 and 2.4. TRANSMITS.\n          Needs MAXL_DEV_KEY on both boards and MAXL_NODE_ID=1 and 2",
+    19: "link -- TWO NODES, one key, one link. Gates 2.1 and 2.4. TRANSMITS.\n          Needs TRAILTALK_DEV_KEY on both boards and TRAILTALK_NODE_ID=1 and 2",
     20: "label -- writes the node letter on the panel and hibernates. No gate; e-paper\n          holds the image with no power, so it is a sticker you cannot lose",
 }
 
-raw = os.environ.get("MAXL_BRINGUP", "0").strip()
+raw = renamed_env.getenv("TRAILTALK_BRINGUP", "0")
 try:
     selected = int(raw, 0)
 except ValueError:
     raise SystemExit(
-        "MAXL_BRINGUP must be a number, got {!r}. Known sketches: {}".format(
+        "TRAILTALK_BRINGUP must be a number, got {!r}. Known sketches: {}".format(
             raw, ", ".join(str(k) for k in sorted(SKETCHES))
         )
     )
@@ -56,21 +61,21 @@ if selected not in SKETCHES:
     )
 
 print("bringup: sketch {} -- {}".format(selected, SKETCHES[selected]))
-env.Append(CPPDEFINES=[("MAXL_BRINGUP", selected)])
+env.Append(CPPDEFINES=[("TRAILTALK_BRINGUP", selected)])
 
 # Optional knobs for the link sketches, so gate 2.1's full runs (100 frames,
 # SF7/SF9/SF12, no start delay on a hub) need no source edit. Absent means the
 # sketch's own defaults.
 for var, define in (
-    ("MAXL_LINK_MESSAGES", "MAXL_LINK_MESSAGES"),
-    ("MAXL_LINK_SF", "MAXL_LINK_SF"),
-    ("MAXL_LINK_START_DELAY_MS", "MAXL_LINK_START_DELAY_MS"),
+    ("TRAILTALK_LINK_MESSAGES", "TRAILTALK_LINK_MESSAGES"),
+    ("TRAILTALK_LINK_SF", "TRAILTALK_LINK_SF"),
+    ("TRAILTALK_LINK_START_DELAY_MS", "TRAILTALK_LINK_START_DELAY_MS"),
     # Not a link knob: makes commonSetup() wait for the host and print how far
     # setup() got, for a sketch that hangs before loop() and therefore says
     # nothing at all. See bringup/common.h.
-    ("MAXL_SETUP_TRACE", "MAXL_SETUP_TRACE"),
+    ("TRAILTALK_SETUP_TRACE", "TRAILTALK_SETUP_TRACE"),
 ):
-    raw_value = os.environ.get(var, "").strip()
+    raw_value = renamed_env.getenv(var)
     if not raw_value:
         continue
     try:

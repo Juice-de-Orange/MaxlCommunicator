@@ -13,8 +13,8 @@
  * caller decides how often that is worth asking about.
  */
 
-#ifndef MAXL_APP_VIEW_H
-#define MAXL_APP_VIEW_H
+#ifndef TRAILTALK_APP_VIEW_H
+#define TRAILTALK_APP_VIEW_H
 
 #include "app/node.h"
 #include "hal/i_gnss.h"
@@ -55,4 +55,4 @@ uint32_t newestReceivedCounter(const Node &node);
 
 } // namespace app
 
-#endif // MAXL_APP_VIEW_H
+#endif // TRAILTALK_APP_VIEW_H

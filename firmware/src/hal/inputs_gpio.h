@@ -18,8 +18,8 @@
  * it; until it has, the vendor header's reading is what ships.
  */
 
-#ifndef MAXL_HAL_INPUTS_GPIO_H
-#define MAXL_HAL_INPUTS_GPIO_H
+#ifndef TRAILTALK_HAL_INPUTS_GPIO_H
+#define TRAILTALK_HAL_INPUTS_GPIO_H
 
 #include "hal/i_inputs.h"
 
@@ -61,4 +61,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_INPUTS_GPIO_H
+#endif // TRAILTALK_HAL_INPUTS_GPIO_H

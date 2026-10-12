@@ -1,4 +1,4 @@
-# CI for MaxlCommunicator.
+# CI for trailtalk.
 #
 # Six jobs, deliberately separate, because they fail for different reasons and
 # a developer should be able to tell which at a glance:
@@ -120,13 +120,16 @@ jobs:
           # secrets in the repository, and a 32-hex literal sitting in a workflow
           # is the shape of thing that later gets copied somewhere it matters --
           # even when, as here, its whole purpose is to be rejected.
-          MAXL_DEV_KEY="$(openssl rand -hex 16)"
-          export MAXL_DEV_KEY
-          if pio run -e release; then
-            echo "::error::The release build accepted MAXL_DEV_KEY. The guard is broken."
-            exit 1
-          fi
-          echo "Release build refused the development key, as required."
+          #
+          # Both names: MAXL_DEV_KEY is the one from before the rename, and the
+          # build still reads it, so it has to be refused just the same.
+          for var in TRAILTALK_DEV_KEY MAXL_DEV_KEY; do
+            if env "${var}=$(openssl rand -hex 16)" pio run -e release; then
+              echo "::error::The release build accepted ${var}. The guard is broken."
+              exit 1
+            fi
+            echo "Release build refused ${var}, as required."
+          done
 
   bridge:
     name: Bridge (TypeScript)
@@ -163,19 +166,19 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: maxl
-          POSTGRES_PASSWORD: maxl
-          POSTGRES_DB: maxl
+          POSTGRES_USER: trailtalk
+          POSTGRES_PASSWORD: trailtalk
+          POSTGRES_DB: trailtalk
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U maxl"
+          --health-cmd "pg_isready -U trailtalk"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
 
     env:
-      DATABASE_URL: postgres://maxl:maxl@127.0.0.1:5432/maxl
+      DATABASE_URL: postgres://trailtalk:trailtalk@127.0.0.1:5432/trailtalk
       ASTRO_TELEMETRY_DISABLED: "1"
 
     steps:
@@ -193,7 +196,7 @@ jobs:
 
       # The schema first, as a step of its own, so that a broken migration fails
       # as a broken migration. The tests do not use this database: they create
-      # and migrate `maxl_test` next to it (web/test/database.ts), which the
+      # and migrate `trailtalk_test` next to it (web/test/database.ts), which the
       # service's superuser role may do.
       - run: npm run db:migrate
         working-directory: web

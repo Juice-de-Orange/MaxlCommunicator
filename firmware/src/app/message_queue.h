@@ -24,8 +24,8 @@
  * puts it on LittleFS.
  */
 
-#ifndef MAXL_APP_MESSAGE_QUEUE_H
-#define MAXL_APP_MESSAGE_QUEUE_H
+#ifndef TRAILTALK_APP_MESSAGE_QUEUE_H
+#define TRAILTALK_APP_MESSAGE_QUEUE_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -214,4 +214,4 @@ private:
 
 } // namespace app
 
-#endif // MAXL_APP_MESSAGE_QUEUE_H
+#endif // TRAILTALK_APP_MESSAGE_QUEUE_H

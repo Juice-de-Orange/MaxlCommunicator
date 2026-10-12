@@ -21,14 +21,17 @@ BLE GATT, custom 128-bit service UUID. Four characteristics:
 | `CONFIG` | `6d61786c-0004-4c6f-5261-4e6f64650000` | read / write | both | settings blob, versioned |
 | `STATUS` | `6d61786c-0005-4c6f-5261-4e6f64650000` | read / notify | device → phone | battery, uptime, queue depth, budget |
 
-The bytes spell the project: `6d61786c` is `maxl`, `4c6f` `Lo`, `5261` `Ra`, `4e6f6465`
-`Node`. Only the second group varies between the service and its characteristics.
+The bytes spell the project's name from before the rename to trailtalk: `6d61786c` is `maxl`,
+`4c6f` `Lo`, `5261` `Ra`, `4e6f6465` `Node`. Only the second group varies between the service and
+its characteristics. The UUIDs did not change with the name and will not: they are what every
+client looks for.
 
 The service UUID is in the advertising packet, so a client can filter on it. The advertised
-device name is `Maxl-XXXX`, where `XXXX` is the **low 16 bits** of the nRF52840's factory
+device name is `trailtalk-XXXX`, where `XXXX` is the **low 16 bits** of the nRF52840's factory
 `DEVICEID` -- the last four hex digits of the serial, not the first. Node A's serial is
-`0123ABCD4567EF01` and it advertises as `Maxl-ABCD` — the same identifier `firmware/nodes.ini` distinguishes nodes by, so
-that two nodes in one rucksack are two different entries in the chooser.
+`0123ABCD4567EF01` and it advertises as `trailtalk-EF01` — the same identifier `firmware/nodes.ini` distinguishes nodes by, so
+that two nodes in one rucksack are two different entries in the chooser. An image built before
+the rename advertises `Maxl-XXXX` with the same digits; a client must not filter on the name.
 
 > Note for anyone implementing the device side: a 128-bit UUID is handed to Nordic's stack
 > **least significant byte first**. Written the human way round it produces a service no

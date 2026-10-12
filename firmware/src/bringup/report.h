@@ -6,20 +6,20 @@
  * terminal by eye and retyped are numbers that get retyped wrong, so every
  * sketch emits a fixed grammar instead and tools/bringup_run.py collects it:
  *
- *     MAXL-BRINGUP 02 begin
+ *     TRAILTALK-BRINGUP 02 begin
  *     INFO   sda=26 scl=27
  *     RESULT i2c.addr.0x51 = present
  *     RESULT i2c.count = 2
  *     VERDICT pass
- *     MAXL-BRINGUP 02 end
+ *     TRAILTALK-BRINGUP 02 end
  *
  * Everything is repeated on a loop, because output produced before the host
  * opens the port is lost -- there is no way to hold the device back until a
  * reader attaches without also hanging it when nobody ever does.
  */
 
-#ifndef MAXL_BRINGUP_REPORT_H
-#define MAXL_BRINGUP_REPORT_H
+#ifndef TRAILTALK_BRINGUP_REPORT_H
+#define TRAILTALK_BRINGUP_REPORT_H
 
 #include <stdint.h>
 
@@ -40,4 +40,4 @@ void verdict(const char *state, const char *why);
 
 } // namespace report
 
-#endif // MAXL_BRINGUP_REPORT_H
+#endif // TRAILTALK_BRINGUP_REPORT_H

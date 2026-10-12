@@ -17,8 +17,8 @@
  * busy and when it came back.
  */
 
-#ifndef MAXL_HAL_I_DISPLAY_H
-#define MAXL_HAL_I_DISPLAY_H
+#ifndef TRAILTALK_HAL_I_DISPLAY_H
+#define TRAILTALK_HAL_I_DISPLAY_H
 
 #include "hal/canvas.h"
 #include "hal/refresh_policy.h"
@@ -65,4 +65,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_DISPLAY_H
+#endif // TRAILTALK_HAL_I_DISPLAY_H

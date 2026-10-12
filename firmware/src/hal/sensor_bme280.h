@@ -16,8 +16,8 @@
  * be made.
  */
 
-#ifndef MAXL_HAL_SENSOR_BME280_H
-#define MAXL_HAL_SENSOR_BME280_H
+#ifndef TRAILTALK_HAL_SENSOR_BME280_H
+#define TRAILTALK_HAL_SENSOR_BME280_H
 
 #include "hal/bme280_compensation.h"
 #include "hal/i_sensor.h"
@@ -54,4 +54,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_SENSOR_BME280_H
+#endif // TRAILTALK_HAL_SENSOR_BME280_H

@@ -23,7 +23,7 @@ beforeEach(() => {
   // A fresh database per test: IndexedDB is durable by design, which is the
   // whole point and also means state leaks between tests unless it is renamed.
   dbCounter += 1;
-  store = new IndexedDbEventStore(`maxl-test-${dbCounter}`);
+  store = new IndexedDbEventStore(`trailtalk-test-${dbCounter}`);
 });
 
 describe("IndexedDbEventStore", () => {
@@ -31,7 +31,7 @@ describe("IndexedDbEventStore", () => {
     await store.append([event(1), event(2), event(3)]);
     store.close();
 
-    const reopened = new IndexedDbEventStore(`maxl-test-${dbCounter}`);
+    const reopened = new IndexedDbEventStore(`trailtalk-test-${dbCounter}`);
     expect(await reopened.highWaterMark()).toBe(3);
     expect((await reopened.all()).map((e) => e.counter)).toEqual([1, 2, 3]);
   });
@@ -42,7 +42,7 @@ describe("IndexedDbEventStore", () => {
     // this read -- issued immediately after, in a fresh transaction -- could
     // still miss the write.
     await store.append([event(7)]);
-    const fresh = new IndexedDbEventStore(`maxl-test-${dbCounter}`);
+    const fresh = new IndexedDbEventStore(`trailtalk-test-${dbCounter}`);
     expect(await fresh.highWaterMark()).toBe(7);
   });
 

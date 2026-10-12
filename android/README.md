@@ -24,7 +24,7 @@ possible:
 | **All response bodies** | `RSP_OK` was described as `opcode:u8, body[]`, with the content given for **no** command. But `GET_INFO`'s response is §5 step 2. |
 | **What `GET_QUEUE` returns** | It does **not** deliver the events — it first sends them individually as unsolicited events and then answers only with the count. A client that waits for a response containing the data waits for ever. |
 | **The upper limit of `maxEvents`** | The device caps at 32, no matter what is asked for. |
-| **The device name** | `Maxl-XXXX`, which a scan filters on. |
+| **The device name** | `trailtalk-XXXX` (`Maxl-XXXX` before the rename), which a scan filters on. |
 
 All five are now in the document. Cross-checked that the **two existing**
 implementations do the same thing — otherwise I would have described the protocol after one side.
@@ -46,7 +46,7 @@ background — **none of it is tested**, and without a phone it cannot be.
 
 `sync/BridgeSession.kt` is §5 of the protocol and nothing else — which step runs when,
 and what makes one fail. None of that is Bluetooth. So that this also holds in the code,
-the class depends on `sync/DeviceLink.kt` instead of `ble/MaxlGatt.kt` — **the same cut that
+the class depends on `sync/DeviceLink.kt` instead of `ble/TrailtalkGatt.kt` — **the same cut that
 D3 makes in the firmware**, where `link/` depends on `hal::IRadioLink` and therefore runs on the
 host. Against it, `FakeNode` plays a device, and **18 tests** check the order, the
 abort on a foreign protocol version, `SET_TIME` only with an invalid clock, the
@@ -77,7 +77,7 @@ cut.
 
 | File | Role |
 |---|---|
-| `ble/MaxlGatt.kt` | Scan filter on the service UUID, GATT client, MTU negotiation, chunking in both directions. Knows nothing about commands. |
+| `ble/TrailtalkGatt.kt` | Scan filter on the service UUID, GATT client, MTU negotiation, chunking in both directions. Knows nothing about commands. |
 | `sync/EventStore.kt` | Append-only file. A half-written record at the end is discarded, everything before it kept — the device offers the rest again anyway. |
 | `sync/BridgeSession.kt` | §5, step by step. Blocking requests, because the protocol only allows one message per direction anyway. |
 | `app/SyncService.kt` | The foreground service. The reason for Phase 9. |
@@ -138,7 +138,7 @@ near.
 
 ## What comes next
 
-A phone. Then gates 6.1 and 6.2 against `Maxl-ABCD`, and the server push, which
+A phone. Then gates 6.1 and 6.2 against `trailtalk-ABCD`, and the server push, which
 is currently a `NoServerYet` that honestly returns `false` — a stub that said `true`
 would make the phone forget events it has sent nowhere.
 

@@ -12,7 +12,9 @@
  * improvement.
  */
 
-const CACHE = "maxl-shell-v1";
+// Renamed from "maxl-shell-v1" with the project. The activate handler below
+// deletes every other cache, so the old shell goes on the first visit.
+const CACHE = "trailtalk-shell-v1";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

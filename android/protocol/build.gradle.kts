@@ -43,7 +43,7 @@ dependencies {
 val vectorsDir = layout.buildDirectory.dir("generated/vectors")
 
 val generateVectors by tasks.registering(Exec::class) {
-    val out = vectorsDir.get().file("io/github/juice_de_orange/maxlcommunicator/protocol/Vectors.kt")
+    val out = vectorsDir.get().file("io/github/juice_de_orange/trailtalk/protocol/Vectors.kt")
     inputs.dir(rootProject.file("../test-vectors"))
     inputs.file(rootProject.file("../tools/gen_vectors.py"))
     outputs.file(out)

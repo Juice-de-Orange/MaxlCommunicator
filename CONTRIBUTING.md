@@ -1,4 +1,4 @@
-# Contributing to MaxlCommunicator
+# Contributing to trailtalk
 
 Thanks for taking the time to contribute! Bug reports, measurements from your own boards, ideas and
 pull requests are welcome. Larger changes are best discussed in an issue first.
@@ -45,7 +45,7 @@ pre-commit install
 
 CI runs the same scanner over the full history. Never commit a network key, an ingest token, a
 password, a serial capture from `docs/test-results/raw/`, your boards' serial numbers or real
-coordinates. The development key comes only from the `MAXL_DEV_KEY` environment variable.
+coordinates. The development key comes only from the `TRAILTALK_DEV_KEY` environment variable.
 
 ## Branch and commit conventions
 

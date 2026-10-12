@@ -16,8 +16,8 @@
  * would be writing against an interface nothing has ever exercised.
  */
 
-#ifndef MAXL_APP_NODE_H
-#define MAXL_APP_NODE_H
+#ifndef TRAILTALK_APP_NODE_H
+#define TRAILTALK_APP_NODE_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -178,7 +178,7 @@ public:
     uint32_t frameCounterPeek() const { return counter_.peek(); }
     uint32_t frameCounterReservedUpTo() const { return counter_.reservedUpTo(); }
 
-#ifdef MAXL_BENCH
+#ifdef TRAILTALK_BENCH
     /*
      * The bench seam (docs/test-plan.md, gates 2.2 and 2.3).
      *
@@ -190,7 +190,7 @@ public:
      * encrypts with the real key, and benchTransmit goes through the budget,
      * because "anything that transmits goes through the budget tracker. There
      * is no second path" (CLAUDE.md 6) is not suspended on a bench. Bring-up
-     * builds only; build_guard.h fails a release that defines MAXL_BENCH.
+     * builds only; build_guard.h fails a release that defines TRAILTALK_BENCH.
      */
     size_t benchFrame(uint16_t dst, const uint8_t *payload, size_t length, uint8_t seq,
                       uint8_t *out, size_t capacity);
@@ -400,7 +400,7 @@ private:
     size_t txSlot_ = link::kMaxOutstanding;
     uint8_t lastStatusFlags_ = 0xFF; ///< 0xFF = no EVT_STATUS journaled yet
 
-#ifdef MAXL_BENCH
+#ifdef TRAILTALK_BENCH
     bool benchTxInFlight_ = false;
     size_t benchTxFrameLen_ = 0;
 #endif
@@ -444,4 +444,4 @@ private:
 
 } // namespace app
 
-#endif // MAXL_APP_NODE_H
+#endif // TRAILTALK_APP_NODE_H

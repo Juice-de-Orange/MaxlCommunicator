@@ -20,12 +20,12 @@ VENDOR   := $(FW_DIR)/lib/tinycrypt
 
 # The same discipline as platformio.ini's build_src_flags. Our code only.
 WARNINGS  := -Wall -Wextra -Werror -Wshadow -Wdouble-promotion
-# -DMAXL_SELF_TEST so link/self_test.cpp is compiled here too, not only in the
+# -DTRAILTALK_SELF_TEST so link/self_test.cpp is compiled here too, not only in the
 # debug firmware image. It is the code that runs at boot on the device (gate
 # 2.15); exercising it only there would mean a bug in the self test itself shows
 # up in the one place it is hardest to look at.
 CXXFLAGS  := -std=c++17 -g -O1 $(WARNINGS) -I$(SRC_DIR) -I. -Ivendor -I$(BUILD)/generated \
-             -I$(VENDOR)/include -DMAXL_SELF_TEST=1
+             -I$(VENDOR)/include -DTRAILTALK_SELF_TEST=1
 CFLAGS    := -std=c11 -g -O1 -I$(VENDOR)/include
 
 # tinycrypt is vendored third-party C (decision D4) and is built without -Werror:

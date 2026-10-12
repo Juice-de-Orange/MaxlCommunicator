@@ -49,8 +49,8 @@
  * device that has to wait for morning.
  */
 
-#ifndef MAXL_HAL_DEADMAN_H
-#define MAXL_HAL_DEADMAN_H
+#ifndef TRAILTALK_HAL_DEADMAN_H
+#define TRAILTALK_HAL_DEADMAN_H
 
 #include <stdint.h>
 
@@ -109,4 +109,4 @@ uint32_t remainingMs();
 } // namespace deadman
 } // namespace hal
 
-#endif // MAXL_HAL_DEADMAN_H
+#endif // TRAILTALK_HAL_DEADMAN_H

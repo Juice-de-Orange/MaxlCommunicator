@@ -31,7 +31,7 @@ describe("the server reads .env from the directory it is started in", () => {
   const saved: Record<string, string | undefined> = {};
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), "maxl-env-"));
+    dir = mkdtempSync(join(tmpdir(), "trailtalk-env-"));
     for (const key of KEYS) {
       saved[key] = process.env[key];
       delete process.env[key];

@@ -4,7 +4,7 @@
  * CLAUDE.md 2.1 permits a development key behind a compile flag for bench work
  * in phases 2-3, and section 6 requires that flag to fail a release build.
  * scripts/release_guard.py and build_guard.h enforce the second half. This is
- * the first half, which until 2026-08-31 did not exist: MAXL_DEV_KEY was passed
+ * the first half, which until 2026-08-31 did not exist: TRAILTALK_DEV_KEY was passed
  * to the compiler and no source file ever read it, so the documented bench path
  * had no end. README.md described it anyway.
  *
@@ -17,16 +17,16 @@
  * as the fallback. A single node transmitting into an empty room keeps working
  * with no environment set, and a pair works by setting one variable on both.
  *
- *     MAXL_DEV_KEY=<32 hex> MAXL_NODE_ID=1 pio run -e bringup -t upload ...
- *     MAXL_DEV_KEY=<same>   MAXL_NODE_ID=2 pio run -e bringup -t upload ...
+ *     TRAILTALK_DEV_KEY=<32 hex> TRAILTALK_NODE_ID=1 pio run -e bringup -t upload ...
+ *     TRAILTALK_DEV_KEY=<same>   TRAILTALK_NODE_ID=2 pio run -e bringup -t upload ...
  *
  * The key exists in an environment variable and in the object code of a debug
  * build, and nowhere else. There has never been one in the tree for `git grep`
  * to find.
  */
 
-#ifndef MAXL_BENCH_KEY_H
-#define MAXL_BENCH_KEY_H
+#ifndef TRAILTALK_BENCH_KEY_H
+#define TRAILTALK_BENCH_KEY_H
 
 #include <nrf.h>
 #include <stdint.h>
@@ -68,14 +68,14 @@ inline void deriveFromDeviceId(uint8_t out[16])
 /*
  * Fill `out` with the key this image should provision.
  *
- * Returns true when it came from MAXL_DEV_KEY -- i.e. when another board built
+ * Returns true when it came from TRAILTALK_DEV_KEY -- i.e. when another board built
  * with the same variable will agree with it. False means the per-chip fallback,
  * which no other board can match.
  */
 inline bool networkKey(uint8_t out[16])
 {
-#ifdef MAXL_DEV_KEY
-    const char *hex = MAXL_DEV_KEY;
+#ifdef TRAILTALK_DEV_KEY
+    const char *hex = TRAILTALK_DEV_KEY;
     for (uint8_t i = 0; i < 16; ++i) {
         const int hi = detail::hexDigit(hex[i * 2]);
         const int lo = detail::hexDigit(hex[i * 2 + 1]);
@@ -95,11 +95,11 @@ inline bool networkKey(uint8_t out[16])
 #endif
 }
 
-/// The address this image answers to. MAXL_NODE_ID, defaulting to 1.
+/// The address this image answers to. TRAILTALK_NODE_ID, defaulting to 1.
 inline constexpr uint16_t nodeId()
 {
-#ifdef MAXL_NODE_ID
-    return static_cast<uint16_t>(MAXL_NODE_ID);
+#ifdef TRAILTALK_NODE_ID
+    return static_cast<uint16_t>(TRAILTALK_NODE_ID);
 #else
     return 1;
 #endif
@@ -113,4 +113,4 @@ inline constexpr uint16_t peerId()
 
 } // namespace bench
 
-#endif // MAXL_BENCH_KEY_H
+#endif // TRAILTALK_BENCH_KEY_H

@@ -29,8 +29,8 @@
  * about seven significant digits and a latitude in 1e-7 degrees needs nine.
  */
 
-#ifndef MAXL_HAL_NMEA_H
-#define MAXL_HAL_NMEA_H
+#ifndef TRAILTALK_HAL_NMEA_H
+#define TRAILTALK_HAL_NMEA_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -130,4 +130,4 @@ uint32_t daysFromCivil(uint16_t year, uint8_t month, uint8_t day);
 
 } // namespace hal
 
-#endif // MAXL_HAL_NMEA_H
+#endif // TRAILTALK_HAL_NMEA_H

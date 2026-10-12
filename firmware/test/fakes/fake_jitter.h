@@ -7,8 +7,8 @@
  * small deterministic sequence.
  */
 
-#ifndef MAXL_TEST_FAKE_JITTER_H
-#define MAXL_TEST_FAKE_JITTER_H
+#ifndef TRAILTALK_TEST_FAKE_JITTER_H
+#define TRAILTALK_TEST_FAKE_JITTER_H
 
 #include "link/arq.h"
 
@@ -35,4 +35,4 @@ private:
 
 } // namespace fakes
 
-#endif // MAXL_TEST_FAKE_JITTER_H
+#endif // TRAILTALK_TEST_FAKE_JITTER_H

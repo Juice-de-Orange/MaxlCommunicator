@@ -7,8 +7,8 @@
  * the difference between 471 ms and 324 ms on the real one (gate 1.1).
  */
 
-#ifndef MAXL_TEST_FAKE_DISPLAY_H
-#define MAXL_TEST_FAKE_DISPLAY_H
+#ifndef TRAILTALK_TEST_FAKE_DISPLAY_H
+#define TRAILTALK_TEST_FAKE_DISPLAY_H
 
 #include <vector>
 
@@ -63,4 +63,4 @@ public:
 
 } // namespace fakes
 
-#endif // MAXL_TEST_FAKE_DISPLAY_H
+#endif // TRAILTALK_TEST_FAKE_DISPLAY_H

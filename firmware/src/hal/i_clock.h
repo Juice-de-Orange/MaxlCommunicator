@@ -19,8 +19,8 @@
  * release time has to survive a reboot.
  */
 
-#ifndef MAXL_HAL_I_CLOCK_H
-#define MAXL_HAL_I_CLOCK_H
+#ifndef TRAILTALK_HAL_I_CLOCK_H
+#define TRAILTALK_HAL_I_CLOCK_H
 
 #include <stdint.h>
 
@@ -44,4 +44,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_CLOCK_H
+#endif // TRAILTALK_HAL_I_CLOCK_H

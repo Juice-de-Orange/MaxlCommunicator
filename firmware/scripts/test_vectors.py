@@ -62,7 +62,7 @@ if is_debug:
         raise SystemExit("test_vectors: generation failed")
 
     env.Append(CPPPATH=[generated_dir])  # noqa: F821
-    env.Append(CPPDEFINES=[("MAXL_SELF_TEST", 1)])  # noqa: F821
+    env.Append(CPPDEFINES=[("TRAILTALK_SELF_TEST", 1)])  # noqa: F821
     print("test_vectors: {}".format(result.stdout.strip()))
 else:
     print("test_vectors: release build, no vectors compiled in")

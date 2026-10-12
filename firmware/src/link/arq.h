@@ -29,8 +29,8 @@
  * retry schedule testable in simulated time.
  */
 
-#ifndef MAXL_LINK_ARQ_H
-#define MAXL_LINK_ARQ_H
+#ifndef TRAILTALK_LINK_ARQ_H
+#define TRAILTALK_LINK_ARQ_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -208,4 +208,4 @@ private:
 
 } // namespace link
 
-#endif // MAXL_LINK_ARQ_H
+#endif // TRAILTALK_LINK_ARQ_H

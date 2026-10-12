@@ -20,8 +20,8 @@
  * So dispatch happens after reassembly and never during it.
  */
 
-#ifndef MAXL_BLE_GATT_SERVER_H
-#define MAXL_BLE_GATT_SERVER_H
+#ifndef TRAILTALK_BLE_GATT_SERVER_H
+#define TRAILTALK_BLE_GATT_SERVER_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -110,4 +110,4 @@ private:
 
 } // namespace ble
 
-#endif // MAXL_BLE_GATT_SERVER_H
+#endif // TRAILTALK_BLE_GATT_SERVER_H

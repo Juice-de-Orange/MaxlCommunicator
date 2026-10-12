@@ -19,8 +19,8 @@
  * startup, and every way a real SX1262 can disappoint you.
  */
 
-#ifndef MAXL_TEST_FAKE_RADIO_H
-#define MAXL_TEST_FAKE_RADIO_H
+#ifndef TRAILTALK_TEST_FAKE_RADIO_H
+#define TRAILTALK_TEST_FAKE_RADIO_H
 
 #include <cstddef>
 #include <cstdint>
@@ -342,4 +342,4 @@ inline void SimChannel::pump(uint32_t nowMs)
 
 } // namespace fakes
 
-#endif // MAXL_TEST_FAKE_RADIO_H
+#endif // TRAILTALK_TEST_FAKE_RADIO_H

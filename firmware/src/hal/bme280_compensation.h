@@ -22,8 +22,8 @@
  * substitutes for it.
  */
 
-#ifndef MAXL_HAL_BME280_COMPENSATION_H
-#define MAXL_HAL_BME280_COMPENSATION_H
+#ifndef TRAILTALK_HAL_BME280_COMPENSATION_H
+#define TRAILTALK_HAL_BME280_COMPENSATION_H
 
 #include <stdint.h>
 
@@ -79,4 +79,4 @@ Bme280Compensated bme280Compensate(const Bme280Calibration &cal, const Bme280Raw
 
 } // namespace hal
 
-#endif // MAXL_HAL_BME280_COMPENSATION_H
+#endif // TRAILTALK_HAL_BME280_COMPENSATION_H

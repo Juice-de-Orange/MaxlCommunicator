@@ -14,8 +14,8 @@
  * received frame updates the peer, not only BEACON.
  */
 
-#ifndef MAXL_APP_PEER_STATE_H
-#define MAXL_APP_PEER_STATE_H
+#ifndef TRAILTALK_APP_PEER_STATE_H
+#define TRAILTALK_APP_PEER_STATE_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -77,4 +77,4 @@ private:
 
 } // namespace app
 
-#endif // MAXL_APP_PEER_STATE_H
+#endif // TRAILTALK_APP_PEER_STATE_H

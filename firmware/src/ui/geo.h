@@ -19,8 +19,8 @@
  * formula would cost flash for precision the GNSS cannot supply.
  */
 
-#ifndef MAXL_UI_GEO_H
-#define MAXL_UI_GEO_H
+#ifndef TRAILTALK_UI_GEO_H
+#define TRAILTALK_UI_GEO_H
 
 #include <stdint.h>
 
@@ -39,4 +39,4 @@ const char *compassPoint(uint16_t bearing);
 
 } // namespace ui
 
-#endif // MAXL_UI_GEO_H
+#endif // TRAILTALK_UI_GEO_H

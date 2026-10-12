@@ -36,8 +36,8 @@
  * ---------------------------------------------------------------------------
  */
 
-#ifndef MAXL_HAL_BOARD_H
-#define MAXL_HAL_BOARD_H
+#ifndef TRAILTALK_HAL_BOARD_H
+#define TRAILTALK_HAL_BOARD_H
 
 #include <stdint.h>
 
@@ -209,4 +209,4 @@ constexpr uint8_t kPinDoNotDrive = 15;      // P0.15
 } // namespace board
 } // namespace hal
 
-#endif // MAXL_HAL_BOARD_H
+#endif // TRAILTALK_HAL_BOARD_H

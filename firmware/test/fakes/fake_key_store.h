@@ -7,8 +7,8 @@
  * flash; here it needs one call.
  */
 
-#ifndef MAXL_TEST_FAKE_KEY_STORE_H
-#define MAXL_TEST_FAKE_KEY_STORE_H
+#ifndef TRAILTALK_TEST_FAKE_KEY_STORE_H
+#define TRAILTALK_TEST_FAKE_KEY_STORE_H
 
 #include <cstring>
 
@@ -85,4 +85,4 @@ private:
 
 } // namespace fakes
 
-#endif // MAXL_TEST_FAKE_KEY_STORE_H
+#endif // TRAILTALK_TEST_FAKE_KEY_STORE_H

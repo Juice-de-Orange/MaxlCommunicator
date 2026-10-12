@@ -10,8 +10,8 @@
  * fakes/fake_key_store.h.
  */
 
-#ifndef MAXL_HAL_KEY_STORE_INTERNAL_H
-#define MAXL_HAL_KEY_STORE_INTERNAL_H
+#ifndef TRAILTALK_HAL_KEY_STORE_INTERNAL_H
+#define TRAILTALK_HAL_KEY_STORE_INTERNAL_H
 
 #include "hal/i_key_store.h"
 
@@ -34,4 +34,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_KEY_STORE_INTERNAL_H
+#endif // TRAILTALK_HAL_KEY_STORE_INTERNAL_H

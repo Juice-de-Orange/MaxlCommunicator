@@ -39,8 +39,8 @@
  * same discipline app::Scheduler uses, for the same reason.
  */
 
-#ifndef MAXL_HAL_PRESS_DETECTOR_H
-#define MAXL_HAL_PRESS_DETECTOR_H
+#ifndef TRAILTALK_HAL_PRESS_DETECTOR_H
+#define TRAILTALK_HAL_PRESS_DETECTOR_H
 
 #include <stdint.h>
 
@@ -129,4 +129,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_PRESS_DETECTOR_H
+#endif // TRAILTALK_HAL_PRESS_DETECTOR_H

@@ -23,8 +23,8 @@
  * Everything above it is tested against fakes/fake_block_store.h.
  */
 
-#ifndef MAXL_HAL_BLOCK_STORE_LITTLEFS_H
-#define MAXL_HAL_BLOCK_STORE_LITTLEFS_H
+#ifndef TRAILTALK_HAL_BLOCK_STORE_LITTLEFS_H
+#define TRAILTALK_HAL_BLOCK_STORE_LITTLEFS_H
 
 #include "hal/i_block_store.h"
 
@@ -100,4 +100,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_BLOCK_STORE_LITTLEFS_H
+#endif // TRAILTALK_HAL_BLOCK_STORE_LITTLEFS_H

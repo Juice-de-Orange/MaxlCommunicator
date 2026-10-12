@@ -39,7 +39,7 @@ coverage/
 # ── Secrets: anything that could carry a network key ────────────────────────
 # CLAUDE.md 6: "No secrets in the repository. Keys are provisioned at runtime."
 # The development key comes exclusively from the environment variable
-# MAXL_DEV_KEY and is never written to a file.
+# TRAILTALK_DEV_KEY and is never written to a file.
 .env
 .env.*
 !.env.example

@@ -15,6 +15,8 @@
 
 import { createHmac, randomBytes, timingSafeEqual, createHash } from "node:crypto";
 
+// The project's name from before the rename to trailtalk, kept on purpose: a new
+// name would sign every operator out on the update, for nothing they can see.
 const SESSION_COOKIE = "maxl_session";
 const SESSION_TTL_S = 60 * 60 * 24 * 30;
 

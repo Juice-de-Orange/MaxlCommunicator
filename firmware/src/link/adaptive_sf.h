@@ -26,8 +26,8 @@
  * 2.16 exists to calibrate them against real range data; expect to come back.
  */
 
-#ifndef MAXL_LINK_ADAPTIVE_SF_H
-#define MAXL_LINK_ADAPTIVE_SF_H
+#ifndef TRAILTALK_LINK_ADAPTIVE_SF_H
+#define TRAILTALK_LINK_ADAPTIVE_SF_H
 
 #include <stdint.h>
 
@@ -111,4 +111,4 @@ private:
 
 } // namespace link
 
-#endif // MAXL_LINK_ADAPTIVE_SF_H
+#endif // TRAILTALK_LINK_ADAPTIVE_SF_H

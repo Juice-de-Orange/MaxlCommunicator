@@ -1,5 +1,5 @@
 /*
- * Board variant for the LilyGO T-Echo (nRF52840 + SX1262), MaxlCommunicator.
+ * Board variant for the LilyGO T-Echo (nRF52840 + SX1262), trailtalk.
  *
  * Pin assignments follow docs/hardware/pinmap.md. The authoritative sources are
  * LilyGO's own examples/Factory/utilities.h, cfr34k/t-echo-lora-aprs config/pinout.h
@@ -17,8 +17,8 @@
  * any later version.
  */
 
-#ifndef _VARIANT_MAXL_TECHO_
-#define _VARIANT_MAXL_TECHO_
+#ifndef _VARIANT_TRAILTALK_TECHO_
+#define _VARIANT_TRAILTALK_TECHO_
 
 /** Master clock frequency */
 #define VARIANT_MCK (64000000ul)
@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-#define MAXL_BOARD_T_ECHO
+#define TRAILTALK_BOARD_T_ECHO
 
 // Number of pins defined in PinDescription array
 #define PINS_COUNT (48)
@@ -210,4 +210,4 @@ static const uint8_t SCK = PIN_SPI_SCK;
 }
 #endif
 
-#endif // _VARIANT_MAXL_TECHO_
+#endif // _VARIANT_TRAILTALK_TECHO_

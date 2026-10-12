@@ -43,8 +43,8 @@
  *   byte  9    check       : u8    xor of the preceding nine bytes, plus 0x5A
  */
 
-#ifndef MAXL_LINK_BUDGET_H
-#define MAXL_LINK_BUDGET_H
+#ifndef TRAILTALK_LINK_BUDGET_H
+#define TRAILTALK_LINK_BUDGET_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -200,4 +200,4 @@ private:
 
 } // namespace link
 
-#endif // MAXL_LINK_BUDGET_H
+#endif // TRAILTALK_LINK_BUDGET_H

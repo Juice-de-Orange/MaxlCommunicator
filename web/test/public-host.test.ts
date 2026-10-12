@@ -13,18 +13,18 @@ import { allowedDomainsFor } from "../src/lib/public-host.mjs";
 
 describe("DASHBOARD_HOST", () => {
   it("trusts forwarded headers for exactly the public host, over https", () => {
-    expect(allowedDomainsFor("maxl.example.com")).toEqual([{ protocol: "https", hostname: "maxl.example.com" }]);
+    expect(allowedDomainsFor("trailtalk.example.com")).toEqual([{ protocol: "https", hostname: "trailtalk.example.com" }]);
   });
 
   it("carries a non-default port", () => {
-    expect(allowedDomainsFor("maxl.example.com:8443")).toEqual([
-      { protocol: "https", hostname: "maxl.example.com", port: "8443" },
+    expect(allowedDomainsFor("trailtalk.example.com:8443")).toEqual([
+      { protocol: "https", hostname: "trailtalk.example.com", port: "8443" },
     ]);
   });
 
   it("accepts a full origin, and drops the default port a pattern could never match", () => {
-    expect(allowedDomainsFor("https://maxl.example.com:443/")).toEqual([
-      { protocol: "https", hostname: "maxl.example.com" },
+    expect(allowedDomainsFor("https://trailtalk.example.com:443/")).toEqual([
+      { protocol: "https", hostname: "trailtalk.example.com" },
     ]);
   });
 
@@ -33,7 +33,7 @@ describe("DASHBOARD_HOST", () => {
     expect(allowedDomainsFor("  ")).toEqual([]);
   });
 
-  it.each(["maxl.example.com/dashboard", "ftp://maxl.example.com", "user@maxl.example.com", "not a host"])(
+  it.each(["trailtalk.example.com/dashboard", "ftp://trailtalk.example.com", "user@trailtalk.example.com", "not a host"])(
     "refuses %s at build time rather than building a server that answers 403",
     (value) => {
       expect(() => allowedDomainsFor(value)).toThrow(/DASHBOARD_HOST/);

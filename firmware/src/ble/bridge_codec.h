@@ -27,8 +27,8 @@
  * interleaving and loss, not to allow concurrency (1.1).
  */
 
-#ifndef MAXL_BLE_BRIDGE_CODEC_H
-#define MAXL_BLE_BRIDGE_CODEC_H
+#ifndef TRAILTALK_BLE_BRIDGE_CODEC_H
+#define TRAILTALK_BLE_BRIDGE_CODEC_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -252,4 +252,4 @@ private:
 
 } // namespace ble
 
-#endif // MAXL_BLE_BRIDGE_CODEC_H
+#endif // TRAILTALK_BLE_BRIDGE_CODEC_H

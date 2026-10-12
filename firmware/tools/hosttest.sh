@@ -13,7 +13,16 @@
 #   firmware/tools/hosttest.sh clean    remove the build directory
 set -euo pipefail
 
-IMAGE="${MAXL_TEST_IMAGE:-gcc:14}"
+# MAXL_TEST_IMAGE is the name from before the rename to trailtalk: still read,
+# with a warning, and the new name wins.
+if [ -n "${MAXL_TEST_IMAGE:-}" ]; then
+    if [ -n "${TRAILTALK_TEST_IMAGE:-}" ]; then
+        echo "warning: MAXL_TEST_IMAGE is set and ignored -- TRAILTALK_TEST_IMAGE wins; unset it" >&2
+    else
+        echo "warning: MAXL_TEST_IMAGE is the pre-rename name; rename it to TRAILTALK_TEST_IMAGE" >&2
+    fi
+fi
+IMAGE="${TRAILTALK_TEST_IMAGE:-${MAXL_TEST_IMAGE:-gcc:14}}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TARGET="${1:-test}"
 

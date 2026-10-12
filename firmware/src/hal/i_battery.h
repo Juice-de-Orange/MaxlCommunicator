@@ -6,8 +6,8 @@
  * STATUS screen -- it is a bit that travels on every frame. Both come from here.
  */
 
-#ifndef MAXL_HAL_I_BATTERY_H
-#define MAXL_HAL_I_BATTERY_H
+#ifndef TRAILTALK_HAL_I_BATTERY_H
+#define TRAILTALK_HAL_I_BATTERY_H
 
 #include <stdint.h>
 
@@ -28,4 +28,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_BATTERY_H
+#endif // TRAILTALK_HAL_I_BATTERY_H

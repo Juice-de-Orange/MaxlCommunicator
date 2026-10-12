@@ -9,7 +9,7 @@ With two boards attached, --node is not optional: see tools/nodes.py for why
 a hardcoded /dev/ttyACM0 flashes whichever one enumerated first.
 
 The sketches repeat their report forever, because anything printed before the
-host opens the port is lost. This waits for a `MAXL-BRINGUP nn begin`, collects
+host opens the port is lost. This waits for a `TRAILTALK-BRINGUP nn begin`, collects
 through the matching `end`, and stops -- so the output is one complete run
 rather than a slice of the middle of one.
 
@@ -31,13 +31,15 @@ ROOT = os.path.dirname(HERE)
 FIRMWARE = os.path.join(ROOT, "firmware")
 PYTHON = os.path.join(ROOT, ".venv", "bin", "python")
 
-BEGIN_RE = re.compile(r"^MAXL-BRINGUP (\d+) begin\s*$")
-END_RE = re.compile(r"^MAXL-BRINGUP (\d+) end\s*$")
+# MAXL-BRINGUP is what images from before the rename print, so --no-flash still
+# collects from a board that has not been reflashed since.
+BEGIN_RE = re.compile(r"^(?:TRAILTALK|MAXL)-BRINGUP (\d+) begin\s*$")
+END_RE = re.compile(r"^(?:TRAILTALK|MAXL)-BRINGUP (\d+) end\s*$")
 VERDICT_RE = re.compile(r"^VERDICT (\w+)")
 
 
 def pio(args, sketch):
-    env = dict(os.environ, MAXL_BRINGUP=str(sketch))
+    env = dict(os.environ, TRAILTALK_BRINGUP=str(sketch))
     return subprocess.run(
         [PYTHON, "-m", "platformio", "run", "-d", FIRMWARE, "-e", "bringup"] + args,
         env=env,

@@ -18,8 +18,8 @@
  * BMP280 the flag says so instead of the reading lying.
  */
 
-#ifndef MAXL_HAL_I_SENSOR_H
-#define MAXL_HAL_I_SENSOR_H
+#ifndef TRAILTALK_HAL_I_SENSOR_H
+#define TRAILTALK_HAL_I_SENSOR_H
 
 #include <stdint.h>
 
@@ -51,4 +51,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_SENSOR_H
+#endif // TRAILTALK_HAL_I_SENSOR_H

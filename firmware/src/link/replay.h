@@ -49,8 +49,8 @@
  * torn trailing record cannot move a mark backwards.
  */
 
-#ifndef MAXL_LINK_REPLAY_H
-#define MAXL_LINK_REPLAY_H
+#ifndef TRAILTALK_LINK_REPLAY_H
+#define TRAILTALK_LINK_REPLAY_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -178,4 +178,4 @@ private:
 
 } // namespace link
 
-#endif // MAXL_LINK_REPLAY_H
+#endif // TRAILTALK_LINK_REPLAY_H

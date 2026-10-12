@@ -187,7 +187,7 @@ bool Node::radioBusy() const
     // A frame on the air, or the continuous window waiting for its ACK: the
     // radio's settings belong to that exchange until it is over.
     bool busy = txSlot_ < link::kMaxOutstanding || ackTxInFlight_ || inAckWindow_;
-#ifdef MAXL_BENCH
+#ifdef TRAILTALK_BENCH
     busy = busy || benchTxInFlight_;
 #endif
     return busy;
@@ -1092,7 +1092,7 @@ void Node::pumpRadio(uint32_t nowMs)
     }
 }
 
-#ifdef MAXL_BENCH
+#ifdef TRAILTALK_BENCH
 size_t Node::benchFrame(uint16_t dst, const uint8_t *payload, size_t length, uint8_t seq,
                         uint8_t *out, size_t capacity)
 {
@@ -1128,11 +1128,11 @@ uint8_t Node::benchTransmit(const uint8_t *frame, size_t length)
     benchTxFrameLen_ = length;
     return 0;
 }
-#endif // MAXL_BENCH
+#endif // TRAILTALK_BENCH
 
 void Node::onTransmitComplete(hal::RadioResult result)
 {
-#ifdef MAXL_BENCH
+#ifdef TRAILTALK_BENCH
     if (benchTxInFlight_) {
         benchTxInFlight_ = false;
         if (result == hal::RadioResult::Ok) {

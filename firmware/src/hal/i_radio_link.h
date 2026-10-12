@@ -14,8 +14,8 @@
  * modulation, one preamble length, one state.
  */
 
-#ifndef MAXL_HAL_I_RADIO_LINK_H
-#define MAXL_HAL_I_RADIO_LINK_H
+#ifndef TRAILTALK_HAL_I_RADIO_LINK_H
+#define TRAILTALK_HAL_I_RADIO_LINK_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -119,4 +119,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_RADIO_LINK_H
+#endif // TRAILTALK_HAL_I_RADIO_LINK_H

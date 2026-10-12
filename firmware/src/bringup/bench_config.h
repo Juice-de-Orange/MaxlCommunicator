@@ -9,8 +9,8 @@
  * by not calling this.
  */
 
-#ifndef MAXL_BRINGUP_BENCH_CONFIG_H
-#define MAXL_BRINGUP_BENCH_CONFIG_H
+#ifndef TRAILTALK_BRINGUP_BENCH_CONFIG_H
+#define TRAILTALK_BRINGUP_BENCH_CONFIG_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -32,4 +32,4 @@ inline void pinFixedSf9(app::Node &node)
 
 } // namespace bench
 
-#endif // MAXL_BRINGUP_BENCH_CONFIG_H
+#endif // TRAILTALK_BRINGUP_BENCH_CONFIG_H
