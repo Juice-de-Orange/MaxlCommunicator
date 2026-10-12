@@ -8,7 +8,7 @@ That is the point: decision D3 puts `IRadioLink` and `IBlockStore` in `hal/` so 
 toolchain with no Arduino core in sight, the layering claim is demonstrated rather than
 asserted.
 
-**290 test cases**, plus 7 224 checks in the link simulation and 39 in the
+**294 test cases**, plus 7 224 checks in the link simulation and 39 in the
 node simulation.
 
 ## Running
