@@ -167,3 +167,39 @@ TEST_CASE("a data frame is admitted only if its real airtime fits the hour")
     CHECK(rig.radio.transmitCount == 1);
     CHECK(rig.usedMs() == sniffAirtimeUs() / 1000u);
 }
+
+TEST_CASE("a factory reset does not give the airtime back")
+{
+    /*
+     * Issue #40. FACTORY_RESET is an opcode any bonded phone can send
+     * (docs/bridge-protocol.md 3). If it erased the budget ring, a reset and a
+     * reboot would clear the rolling hour and the frame lockout -- the duty
+     * cycle CLAUDE.md 1.2 makes legally binding would be one tap away from
+     * empty. "A budget that a power cycle can clear is not a budget", and a
+     * factory reset is a power cycle with extra steps.
+     */
+    Rig rig(360000000u);
+    rig.sendText();
+    rig.run(3000);
+    REQUIRE(rig.radio.transmitCount == 1);
+    const uint32_t spentMs = rig.usedMs();
+    REQUIRE(spentMs == 2196u);
+
+    REQUIRE(rig.node.factoryReset() == 0);
+    // A clean reboot afterwards: what the reset left on flash is all there is.
+
+    fakes::FakeKeyStore freshKeys;
+    app::Node rebooted(rig.clock, rig.store, freshKeys);
+    REQUIRE(rebooted.begin(0x0001));
+    uint8_t body[32];
+    REQUIRE(rebooted.budget(body, sizeof(body)) >= 13);
+    const uint32_t used = static_cast<uint32_t>(body[1]) | (static_cast<uint32_t>(body[2]) << 8)
+                          | (static_cast<uint32_t>(body[3]) << 16)
+                          | (static_cast<uint32_t>(body[4]) << 24);
+    CHECK(used == spentMs);
+    // And the frame lockout is still running: the next data frame must wait.
+    const uint32_t nextTx = static_cast<uint32_t>(body[9]) | (static_cast<uint32_t>(body[10]) << 8)
+                            | (static_cast<uint32_t>(body[11]) << 16)
+                            | (static_cast<uint32_t>(body[12]) << 24);
+    CHECK(nextTx > rig.clock.unixSeconds());
+}

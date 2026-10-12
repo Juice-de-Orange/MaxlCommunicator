@@ -128,8 +128,8 @@ The frame counter does **not** reset on rotation. It never resets, for any reaso
 
 ## 5. Factory reset
 
-`FACTORY_RESET` erases both key slots, all bonds, the config, the event journal and the
-budget ring. It does **not** reset the frame counter — a device that came back from a reset
+`FACTORY_RESET` erases both key slots, all bonds, the config, the message queue and the event
+journal. It does **not** reset the frame counter — a device that came back from a reset
 with a counter of zero would reuse nonces against any peer that still remembered it.
 
 Nor does it erase the per-peer replay marks (`firmware/src/link/replay.h`), for the same reason
@@ -137,4 +137,9 @@ seen from the receiving end: the network key is usually provisioned again after 
 every frame ever recorded under it would then authenticate. A receiver that had forgotten its
 marks would accept each of them again.
 
-The counter and the replay marks are the two pieces of state that survive everything.
+Nor does it erase the duty-cycle budget ring. `FACTORY_RESET` is one opcode from any bonded phone,
+and a ring it erased would hand back the rolling hour and the frame lockout at the next reboot —
+the duty cycle is legally binding (`CLAUDE.md` §1.2), and airtime spent before a reset was still
+spent. The ring holds an hour of records and empties itself as they age out.
+
+The counter, the replay marks and the budget ring are the state that survives everything.

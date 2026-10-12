@@ -24,7 +24,14 @@ All notable changes to this project are documented here. The format follows
   receiver reboots is rejected after it. Marks are reserved 16 counter values ahead, written once
   per block, and survive a factory reset like the frame counter (#2). Host-tested; not yet verified
   on hardware.
-
+- Firmware: a band, power or sniff-interval change over BLE was charged to the budget at once but
+  reached the radio only at the next spreading-factor change, so a node switched from g1 back to g3
+  could spend g3's 10 % on 868.1 MHz. The radio is now retuned as soon as it is free, and every
+  frame is charged for the band and preamble it was actually sent with (#39). Host-tested; not yet
+  verified on hardware.
+- Firmware: `FACTORY_RESET` erased the duty-cycle budget ring, so a bonded phone could clear the
+  rolling hour and the frame lockout with a reset and a reboot. The ring now survives a reset like
+  the frame counter and the replay marks (#40). Host-tested; not yet verified on hardware.
 - Dashboard: login and logout answered 403 behind the reverse proxy that `docs/DEPLOYMENT.md`
   prescribes. The cross-site check stays on; set `DASHBOARD_HOST` and rebuild.
 - Dashboard: `npm test` emptied the database `DATABASE_URL` points at. The tests now run in their
