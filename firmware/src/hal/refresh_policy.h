@@ -27,8 +27,8 @@
  * updates through it in a millisecond instead of an hour.
  */
 
-#ifndef MAXL_HAL_REFRESH_POLICY_H
-#define MAXL_HAL_REFRESH_POLICY_H
+#ifndef TRAILTALK_HAL_REFRESH_POLICY_H
+#define TRAILTALK_HAL_REFRESH_POLICY_H
 
 #include <stdint.h>
 
@@ -73,4 +73,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_REFRESH_POLICY_H
+#endif // TRAILTALK_HAL_REFRESH_POLICY_H

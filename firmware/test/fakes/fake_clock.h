@@ -8,8 +8,8 @@
  * a unit test, which is the whole reason hal::IClock is an interface.
  */
 
-#ifndef MAXL_TEST_FAKE_CLOCK_H
-#define MAXL_TEST_FAKE_CLOCK_H
+#ifndef TRAILTALK_TEST_FAKE_CLOCK_H
+#define TRAILTALK_TEST_FAKE_CLOCK_H
 
 #include "hal/i_clock.h"
 
@@ -57,4 +57,4 @@ private:
 
 } // namespace fakes
 
-#endif // MAXL_TEST_FAKE_CLOCK_H
+#endif // TRAILTALK_TEST_FAKE_CLOCK_H

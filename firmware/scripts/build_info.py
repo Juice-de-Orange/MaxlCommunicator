@@ -51,6 +51,6 @@ env.Append(  # noqa: F821
     ]
 )
 
-env.Replace(PROGNAME="maxl-{}-{}-g{}".format(env["PIOENV"], version, sha))  # noqa: F821
+env.Replace(PROGNAME="trailtalk-{}-{}-g{}".format(env["PIOENV"], version, sha))  # noqa: F821
 
 print("build_info: {}".format(version_full))

@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-#if defined(MAXL_SELF_TEST)
+#if defined(TRAILTALK_SELF_TEST)
 #include "test_vectors.h"
 
 #include <tinycrypt/aes.h>
@@ -16,7 +16,7 @@
 namespace link {
 namespace {
 
-#if defined(MAXL_SELF_TEST)
+#if defined(TRAILTALK_SELF_TEST)
 
 /// RFC 3610 appendix A carries 24 vectors. Payloads reach 31 bytes and tags 10,
 /// so 96 is comfortable without being a guess.
@@ -137,7 +137,7 @@ bool runFrameConstruction()
     return memcmp(body, fixture->bytes, sizeof(body)) == 0;
 }
 
-#endif // MAXL_SELF_TEST
+#endif // TRAILTALK_SELF_TEST
 
 } // namespace
 
@@ -145,7 +145,7 @@ SelfTestResult runCryptoSelfTest()
 {
     SelfTestResult result;
 
-#if defined(MAXL_SELF_TEST)
+#if defined(TRAILTALK_SELF_TEST)
     result.available = true;
 
     // RFC 3610 appendix A, vectors 1 through 24.

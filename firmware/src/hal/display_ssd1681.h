@@ -24,8 +24,8 @@
  * hundreds.
  */
 
-#ifndef MAXL_HAL_DISPLAY_SSD1681_H
-#define MAXL_HAL_DISPLAY_SSD1681_H
+#ifndef TRAILTALK_HAL_DISPLAY_SSD1681_H
+#define TRAILTALK_HAL_DISPLAY_SSD1681_H
 
 #include "hal/i_display.h"
 
@@ -60,4 +60,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_DISPLAY_SSD1681_H
+#endif // TRAILTALK_HAL_DISPLAY_SSD1681_H

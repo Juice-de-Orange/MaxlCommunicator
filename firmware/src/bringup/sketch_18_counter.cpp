@@ -37,7 +37,7 @@
 
 #include "bringup.h"
 
-#if defined(MAXL_BRINGUP) && MAXL_BRINGUP == 18
+#if defined(TRAILTALK_BRINGUP) && TRAILTALK_BRINGUP == 18
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -92,7 +92,7 @@ constexpr uint32_t kWindowMs = 4000;
 constexpr size_t kScratchRecordBytes = 16;
 
 bool g_storeOk = false;
-/// True when the key came from MAXL_DEV_KEY, i.e. when another board can match it.
+/// True when the key came from TRAILTALK_DEV_KEY, i.e. when another board can match it.
 bool g_keyShared = false;
 bool g_nodeOk = false;
 bool g_radioOk = false;
@@ -383,4 +383,4 @@ void loop()
 
 } // namespace bringup
 
-#endif // MAXL_BRINGUP == 18
+#endif // TRAILTALK_BRINGUP == 18

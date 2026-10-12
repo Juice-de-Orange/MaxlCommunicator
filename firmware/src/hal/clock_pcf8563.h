@@ -17,8 +17,8 @@
  * the answer is no, gate 2.8 has to split as D2 proposes.
  */
 
-#ifndef MAXL_HAL_CLOCK_PCF8563_H
-#define MAXL_HAL_CLOCK_PCF8563_H
+#ifndef TRAILTALK_HAL_CLOCK_PCF8563_H
+#define TRAILTALK_HAL_CLOCK_PCF8563_H
 
 #include "hal/i_clock.h"
 
@@ -55,4 +55,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_CLOCK_PCF8563_H
+#endif // TRAILTALK_HAL_CLOCK_PCF8563_H

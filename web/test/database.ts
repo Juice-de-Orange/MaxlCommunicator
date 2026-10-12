@@ -29,9 +29,9 @@ import {
 
 export const TEST_DATABASE_SUFFIX = "_test";
 
-/** `postgres://…/maxl` -> `postgres://…/maxl_test`. A name that already ends in
+/** `postgres://…/trailtalk` -> `postgres://…/trailtalk_test`. A name that already ends in
  *  the suffix is left alone, so pointing `DATABASE_URL` at a test database
- *  directly does not produce `maxl_test_test`. */
+ *  directly does not produce `trailtalk_test_test`. */
 export function testDatabaseUrl(url: string): string {
   const parsed = new URL(url);
   const name = decodeURIComponent(parsed.pathname.replace(/^\//, ""));

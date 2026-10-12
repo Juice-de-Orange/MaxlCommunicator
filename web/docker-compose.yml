@@ -1,5 +1,5 @@
 # =============================================================================
-# MaxlCommunicator dashboard.
+# trailtalk dashboard.
 #
 # Runs anywhere. For a public deployment put a TLS-terminating reverse proxy in
 # front of it -- Web Bluetooth needs a secure context (docs/DEPLOYMENT.md).
@@ -12,6 +12,14 @@
 # projects, `web-postgres-1` is a name that will collide with something sooner or
 # later, and the collision surfaces as one project's `docker compose down`
 # stopping another's database.
+#
+# `maxl` -- and the `maxl` fallbacks for the database role and name below -- are
+# the names from before the project was renamed from MaxlCommunicator, and they
+# are fallbacks on purpose. The project name is what compose prefixes the data
+# volume with, so an installation whose .env predates the rename keeps running
+# as `maxl` on its volume `maxl_pgdata` with no step at all, instead of coming
+# up on a new, empty database. A new installation copies .env.example, which
+# sets COMPOSE_PROJECT_NAME=trailtalk and the trailtalk role and database.
 name: maxl
 
 services:
@@ -55,6 +63,9 @@ services:
       # Only so the entrypoint can refuse to start an image built for another
       # host; the value that counts is the build argument above.
       DASHBOARD_HOST: ${DASHBOARD_HOST:-}
+      # Only so the entrypoint can say that this runs under the pre-rename
+      # project name (see `name:` above).
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
       HOST: 0.0.0.0
       PORT: "4321"
     ports:

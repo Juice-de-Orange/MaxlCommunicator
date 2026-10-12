@@ -15,8 +15,8 @@
  * NOT covered by the host tests. Nothing in it can be.
  */
 
-#ifndef MAXL_HAL_BLE_TRANSPORT_BLUEFRUIT_H
-#define MAXL_HAL_BLE_TRANSPORT_BLUEFRUIT_H
+#ifndef TRAILTALK_HAL_BLE_TRANSPORT_BLUEFRUIT_H
+#define TRAILTALK_HAL_BLE_TRANSPORT_BLUEFRUIT_H
 
 #include "hal/i_ble_transport.h"
 
@@ -32,7 +32,7 @@ public:
      *
      * `deviceName` is what appears in an advertising packet and in the phone's
      * chooser, so it is the device's own name and not the product's -- with two
-     * nodes in a rucksack, "MaxlCommunicator" twice is not a chooser anyone can
+     * nodes in a rucksack, "trailtalk" twice is not a chooser anyone can
      * use.
      */
     bool begin(const char *deviceName, IBleChunkSink &sink);
@@ -67,4 +67,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_BLE_TRANSPORT_BLUEFRUIT_H
+#endif // TRAILTALK_HAL_BLE_TRANSPORT_BLUEFRUIT_H

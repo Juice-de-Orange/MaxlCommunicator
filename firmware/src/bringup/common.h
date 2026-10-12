@@ -6,8 +6,8 @@
  * Sketch 00 deliberately does not use this -- it must not touch Serial at all.
  */
 
-#ifndef MAXL_BRINGUP_COMMON_H
-#define MAXL_BRINGUP_COMMON_H
+#ifndef TRAILTALK_BRINGUP_COMMON_H
+#define TRAILTALK_BRINGUP_COMMON_H
 
 #include <stdint.h>
 
@@ -36,11 +36,11 @@ bool usbReady();
  * into the bootloader fifteen minutes later with nothing to say about where it
  * stopped.
  *
- * Compiled in only under MAXL_SETUP_TRACE, because it needs commonSetup() to
+ * Compiled in only under TRAILTALK_SETUP_TRACE, because it needs commonSetup() to
  * wait for the host before it can print anything, and waiting is precisely what
  * the normal bring-up path must not do.
  *
- *   MAXL_SETUP_TRACE=1 MAXL_BRINGUP=19 pio run -e bringup -t upload
+ *   TRAILTALK_SETUP_TRACE=1 TRAILTALK_BRINGUP=19 pio run -e bringup -t upload
  */
 void traceStep(const char *step);
 
@@ -54,4 +54,4 @@ hal::I2cRecovery i2cRecovery();
 
 } // namespace bringup
 
-#endif // MAXL_BRINGUP_COMMON_H
+#endif // TRAILTALK_BRINGUP_COMMON_H

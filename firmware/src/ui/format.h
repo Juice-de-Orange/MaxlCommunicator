@@ -10,8 +10,8 @@
  * buffer so calls can be nested inside a canvas.text().
  */
 
-#ifndef MAXL_UI_FORMAT_H
-#define MAXL_UI_FORMAT_H
+#ifndef TRAILTALK_UI_FORMAT_H
+#define TRAILTALK_UI_FORMAT_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -53,4 +53,4 @@ const char *formatDistance(char *out, size_t size, uint32_t metres);
 
 } // namespace ui
 
-#endif // MAXL_UI_FORMAT_H
+#endif // TRAILTALK_UI_FORMAT_H

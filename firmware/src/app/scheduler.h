@@ -17,8 +17,8 @@
  * change at any time and re-phase from the change rather than from boot.
  */
 
-#ifndef MAXL_APP_SCHEDULER_H
-#define MAXL_APP_SCHEDULER_H
+#ifndef TRAILTALK_APP_SCHEDULER_H
+#define TRAILTALK_APP_SCHEDULER_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -81,4 +81,4 @@ private:
 
 } // namespace app
 
-#endif // MAXL_APP_SCHEDULER_H
+#endif // TRAILTALK_APP_SCHEDULER_H

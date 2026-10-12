@@ -64,7 +64,7 @@ void watchdogTask(void *)
 
 Recovery defaultRecovery()
 {
-#if defined(MAXL_BUILD) && MAXL_BUILD == 2
+#if defined(TRAILTALK_BUILD) && TRAILTALK_BUILD == 2
     return Recovery::Reset;
 #else
     return Recovery::Bootloader;

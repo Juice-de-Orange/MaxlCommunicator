@@ -22,8 +22,8 @@
  * should look wrong, not reboot the device in the field.
  */
 
-#ifndef MAXL_HAL_CANVAS_H
-#define MAXL_HAL_CANVAS_H
+#ifndef TRAILTALK_HAL_CANVAS_H
+#define TRAILTALK_HAL_CANVAS_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -122,4 +122,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_CANVAS_H
+#endif // TRAILTALK_HAL_CANVAS_H

@@ -61,7 +61,7 @@ container deployment and does not apply to `npm run dev`: that is Astro's 4321 u
 one, `npm run dev -- --port 4400`.
 
 **The tests never touch the database `DATABASE_URL` names.** They empty every table before and
-after each file, so they run in a sibling database with `_test` appended (`maxl` → `maxl_test`),
+after each file, so they run in a sibling database with `_test` appended (`trailtalk` → `trailtalk_test`),
 which `npm test` creates on first use and migrates on every run; a `DATABASE_URL` that already
 ends in `_test` is used as it is. The role needs the right to create a database once — the one from
 `.env.example` has it — and the helper that empties the tables asks the server for the database

@@ -32,8 +32,8 @@
  * to idle. This is that, and it runs before Wire.begin().
  */
 
-#ifndef MAXL_HAL_I2C_RECOVER_H
-#define MAXL_HAL_I2C_RECOVER_H
+#ifndef TRAILTALK_HAL_I2C_RECOVER_H
+#define TRAILTALK_HAL_I2C_RECOVER_H
 
 #include <stdint.h>
 
@@ -55,4 +55,4 @@ I2cRecovery recoverI2cBus(uint8_t sdaPin, uint8_t sclPin);
 
 } // namespace hal
 
-#endif // MAXL_HAL_I2C_RECOVER_H
+#endif // TRAILTALK_HAL_I2C_RECOVER_H

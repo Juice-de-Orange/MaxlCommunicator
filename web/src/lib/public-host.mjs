@@ -15,8 +15,8 @@
  */
 
 /**
- * @param {string | undefined} value `maxl.example.com`, optionally with a port
- *   (`maxl.example.com:8443`) or as a full origin (`https://maxl.example.com`).
+ * @param {string | undefined} value `trailtalk.example.com`, optionally with a port
+ *   (`trailtalk.example.com:8443`) or as a full origin (`https://trailtalk.example.com`).
  * @returns {{ protocol: string, hostname: string, port?: string }[]} Empty when
  *   unset: no forwarded header is trusted, which is right for `http://localhost`.
  */
@@ -42,7 +42,7 @@ export function allowedDomainsFor(value) {
   ) {
     throw new Error(
       `DASHBOARD_HOST is "${text}" -- expected the public host name of the dashboard, ` +
-        "for example maxl.example.com (a port is allowed: maxl.example.com:8443)",
+        "for example trailtalk.example.com (a port is allowed: trailtalk.example.com:8443)",
     );
   }
 

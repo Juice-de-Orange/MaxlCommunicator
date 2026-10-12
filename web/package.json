@@ -1,9 +1,9 @@
 {
-  "name": "maxl-dashboard",
+  "name": "trailtalk-dashboard",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Management dashboard for the MaxlCommunicator LoRa network. Append-only event log; all state is a projection.",
+  "description": "Management dashboard for the trailtalk LoRa network. Append-only event log; all state is a projection.",
   "engines": {
     "node": ">=22 <23"
   },

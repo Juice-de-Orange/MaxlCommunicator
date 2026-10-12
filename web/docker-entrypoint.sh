@@ -14,10 +14,20 @@ set -e
 # DASHBOARD_HOST is compiled into the server (see the Dockerfile). Changing it in
 # .env and restarting without a rebuild would leave the old host in force, and
 # the symptom is a login form that answers 403 -- so say it here instead.
-if [ -n "${DASHBOARD_HOST:-}" ] && [ "${DASHBOARD_HOST}" != "${MAXL_BUILT_FOR_HOST:-}" ]; then
-  echo "DASHBOARD_HOST is '${DASHBOARD_HOST}', but this image was built for '${MAXL_BUILT_FOR_HOST:-}'." >&2
+if [ -n "${DASHBOARD_HOST:-}" ] && [ "${DASHBOARD_HOST}" != "${TRAILTALK_BUILT_FOR_HOST:-}" ]; then
+  echo "DASHBOARD_HOST is '${DASHBOARD_HOST}', but this image was built for '${TRAILTALK_BUILT_FOR_HOST:-}'." >&2
   echo "Rebuild it: docker compose up -d --build" >&2
   exit 1
+fi
+
+# The compose project name falls back to `maxl`, the name from before the rename
+# to trailtalk, so that an installation whose .env predates it keeps its data
+# volume (docker-compose.yml). Nothing is wrong; say it once per start so it is
+# a choice rather than an accident.
+if [ "${COMPOSE_PROJECT_NAME:-}" = "maxl" ]; then
+  echo "note: running as compose project 'maxl', the name from before the rename to trailtalk;" >&2
+  echo "      the database stays in volume maxl_pgdata. Nothing to do -- docs/DEPLOYMENT.md" >&2
+  echo "      'Updating from MaxlCommunicator' explains this and how to move if you want to." >&2
 fi
 
 echo "applying migrations"

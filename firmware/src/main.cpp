@@ -1,5 +1,5 @@
 /*
- * MaxlCommunicator -- the application.
+ * trailtalk -- the application.
  *
  * Everything below has run on this board already, one layer at a time and then
  * all together in bring-up sketch 12. This is the same wiring without the
@@ -33,9 +33,9 @@
 
 /*
  * Phase 0 bring-up images replace this entry point wholesale. One sketch per
- * peripheral, selected by MAXL_BRINGUP -- see src/bringup/bringup.h.
+ * peripheral, selected by TRAILTALK_BRINGUP -- see src/bringup/bringup.h.
  */
-#if defined(MAXL_BRINGUP)
+#if defined(TRAILTALK_BRINGUP)
 
 #include "bringup/bringup.h"
 
@@ -120,14 +120,14 @@ link::SelfTestResult g_selfTest;
  * of release builds, and a node on a hillside has nobody to print to. But a
  * silent image is also an image nobody can tell apart from a hung one, and this
  * one is new. In a debug build it says what it is doing every ten seconds;
- * build_guard.h refuses to compile a release image with MAXL_LOG_LEVEL above 0,
+ * build_guard.h refuses to compile a release image with TRAILTALK_LOG_LEVEL above 0,
  * so this cannot leak into one by accident.
  */
-#if defined(MAXL_LOG_LEVEL) && MAXL_LOG_LEVEL > 0
-#define MAXL_APP_HEARTBEAT 1
+#if defined(TRAILTALK_LOG_LEVEL) && TRAILTALK_LOG_LEVEL > 0
+#define TRAILTALK_APP_HEARTBEAT 1
 #endif
 
-#if defined(MAXL_APP_HEARTBEAT)
+#if defined(TRAILTALK_APP_HEARTBEAT)
 constexpr uint32_t kHeartbeatMs = 10000;
 uint32_t g_lastHeartbeatMs = 0;
 #endif
@@ -152,7 +152,7 @@ constexpr uint32_t kGnssTimeoutMs = 120000;
 /// CLAUDE.md 0: device IDs are built for N nodes from day one. Until the
 /// provisioning flow assigns one, this is what the image ships with.
 /*
- * The address this image answers to, from MAXL_NODE_ID (default 1).
+ * The address this image answers to, from TRAILTALK_NODE_ID (default 1).
  *
  * A shipping node is given its id over BLE; this is what it starts from, and it
  * is what lets two bench boards be two different nodes without two source trees.
@@ -265,10 +265,10 @@ void serviceGnss()
     }
 }
 
-#if defined(MAXL_APP_HEARTBEAT)
+#if defined(TRAILTALK_APP_HEARTBEAT)
 void heartbeat()
 {
-    Serial.printf("maxl %s %s | up %lus | crypto %u/%u %s | clock %s | tx %s | ble %s"
+    Serial.printf("trailtalk %s %s | up %lus | crypto %u/%u %s | clock %s | tx %s | ble %s"
                   " | screen %s | refresh %lu/%lu | batt %umV | %s %d.%02dC\n",
                   FW_VERSION_FULL, FW_GIT_HASH,
                   static_cast<unsigned long>(millis() / 1000u),
@@ -348,13 +348,17 @@ void setup()
      *
      * The name carries the last four hex digits of the nRF52840's factory
      * DEVICEID, because it is what appears in the phone's chooser and two
-     * devices in the same rucksack both called "MaxlCommunicator" is not a
+     * devices in the same rucksack both called "trailtalk" is not a
      * chooser anyone can use. The same register is what firmware/nodes.ini
      * distinguishes nodes by, so the name in the chooser and the name in the
      * notes are the same string.
+     *
+     * Images from before the rename advertise `Maxl-XXXX`. Both clients find a
+     * node by its service UUID and never by this name, so old and new images
+     * pair alike.
      */
     char bleName[24];
-    snprintf(bleName, sizeof(bleName), "Maxl-%04lX",
+    snprintf(bleName, sizeof(bleName), "trailtalk-%04lX",
              static_cast<unsigned long>(NRF_FICR->DEVICEID[0] & 0xFFFFu));
     g_ble.begin(bleName, g_gatt);
     g_ble.startAdvertising();
@@ -399,7 +403,7 @@ void loop()
                         g_lastReadCounter, g_model);
     g_ui.render(g_model);
 
-#if defined(MAXL_APP_HEARTBEAT)
+#if defined(TRAILTALK_APP_HEARTBEAT)
     if (static_cast<uint32_t>(now - g_lastHeartbeatMs) >= kHeartbeatMs) {
         g_lastHeartbeatMs = now;
         heartbeat();
@@ -410,4 +414,4 @@ void loop()
     delay(20);
 }
 
-#endif // MAXL_BRINGUP
+#endif // TRAILTALK_BRINGUP

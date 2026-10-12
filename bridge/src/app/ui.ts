@@ -174,7 +174,7 @@ export function render(root: HTMLElement, model: ViewModel, handlers: Handlers):
 
   root.innerHTML = `
     <header class="row" style="margin-bottom:1rem">
-      <h1>MaxlCommunicator</h1>
+      <h1>trailtalk</h1>
       <span class="pill ${model.connection === "connected" || model.connection === "syncing" ? "on" : "off"}">
         ${
           { idle: "disconnected", connecting: "connecting…", connected: "connected",

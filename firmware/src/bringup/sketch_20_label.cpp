@@ -17,7 +17,7 @@
  * not secrets -- but they identify your hardware, so they are not in the
  * repository. Pass them as build flags, e.g.
  *
- *   PLATFORMIO_BUILD_FLAGS="-DMAXL_NODE_A_ID_HIGH=0x0123ABCDul -DMAXL_NODE_A_ID_LOW=0x4567EF01ul"
+ *   PLATFORMIO_BUILD_FLAGS="-DTRAILTALK_NODE_A_ID_HIGH=0x0123ABCDul -DTRAILTALK_NODE_A_ID_LOW=0x4567EF01ul"
  *
  * Without them every board says '?'.
  *
@@ -26,7 +26,7 @@
 
 #include "bringup.h"
 
-#if defined(MAXL_BRINGUP) && MAXL_BRINGUP == 20
+#if defined(TRAILTALK_BRINGUP) && TRAILTALK_BRINGUP == 20
 
 #include <Arduino.h>
 
@@ -59,22 +59,41 @@ struct KnownNode {
     char letter;
 };
 
-#ifndef MAXL_NODE_A_ID_HIGH
-#define MAXL_NODE_A_ID_HIGH 0x00000000ul
+// The names from before the rename to trailtalk (MAXL_NODE_A_ID_HIGH, ...) still
+// work. A note rather than #warning, which -Werror would turn into a failure.
+#if !defined(TRAILTALK_NODE_A_ID_HIGH) && defined(MAXL_NODE_A_ID_HIGH)
+#pragma message("MAXL_NODE_A_ID_HIGH is the pre-rename name; use TRAILTALK_NODE_A_ID_HIGH")
+#define TRAILTALK_NODE_A_ID_HIGH MAXL_NODE_A_ID_HIGH
 #endif
-#ifndef MAXL_NODE_A_ID_LOW
-#define MAXL_NODE_A_ID_LOW 0x00000000ul
+#if !defined(TRAILTALK_NODE_A_ID_LOW) && defined(MAXL_NODE_A_ID_LOW)
+#pragma message("MAXL_NODE_A_ID_LOW is the pre-rename name; use TRAILTALK_NODE_A_ID_LOW")
+#define TRAILTALK_NODE_A_ID_LOW MAXL_NODE_A_ID_LOW
 #endif
-#ifndef MAXL_NODE_B_ID_HIGH
-#define MAXL_NODE_B_ID_HIGH 0x00000000ul
+#if !defined(TRAILTALK_NODE_B_ID_HIGH) && defined(MAXL_NODE_B_ID_HIGH)
+#pragma message("MAXL_NODE_B_ID_HIGH is the pre-rename name; use TRAILTALK_NODE_B_ID_HIGH")
+#define TRAILTALK_NODE_B_ID_HIGH MAXL_NODE_B_ID_HIGH
 #endif
-#ifndef MAXL_NODE_B_ID_LOW
-#define MAXL_NODE_B_ID_LOW 0x00000000ul
+#if !defined(TRAILTALK_NODE_B_ID_LOW) && defined(MAXL_NODE_B_ID_LOW)
+#pragma message("MAXL_NODE_B_ID_LOW is the pre-rename name; use TRAILTALK_NODE_B_ID_LOW")
+#define TRAILTALK_NODE_B_ID_LOW MAXL_NODE_B_ID_LOW
+#endif
+
+#ifndef TRAILTALK_NODE_A_ID_HIGH
+#define TRAILTALK_NODE_A_ID_HIGH 0x00000000ul
+#endif
+#ifndef TRAILTALK_NODE_A_ID_LOW
+#define TRAILTALK_NODE_A_ID_LOW 0x00000000ul
+#endif
+#ifndef TRAILTALK_NODE_B_ID_HIGH
+#define TRAILTALK_NODE_B_ID_HIGH 0x00000000ul
+#endif
+#ifndef TRAILTALK_NODE_B_ID_LOW
+#define TRAILTALK_NODE_B_ID_LOW 0x00000000ul
 #endif
 
 constexpr KnownNode kKnownNodes[] = {
-    {MAXL_NODE_A_ID_HIGH, MAXL_NODE_A_ID_LOW, 'A'},
-    {MAXL_NODE_B_ID_HIGH, MAXL_NODE_B_ID_LOW, 'B'},
+    {TRAILTALK_NODE_A_ID_HIGH, TRAILTALK_NODE_A_ID_LOW, 'A'},
+    {TRAILTALK_NODE_B_ID_HIGH, TRAILTALK_NODE_B_ID_LOW, 'B'},
 };
 
 char letterForThisBoard()
@@ -202,4 +221,4 @@ void loop()
 
 } // namespace bringup
 
-#endif // MAXL_BRINGUP == 20
+#endif // TRAILTALK_BRINGUP == 20

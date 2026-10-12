@@ -22,6 +22,9 @@
 import type { Outbox, OutboxEntry } from "./outbox";
 import type { EventStore, JournalEvent } from "./store";
 
+// The project's name from before the rename to trailtalk, kept on purpose: this
+// database holds events the server has not seen yet, and a new name would
+// orphan them on every phone that already uses the app.
 const DB_NAME = "maxl-bridge";
 /*
  * 2 adds the outbox. The upgrade handler creates only what is missing, so a

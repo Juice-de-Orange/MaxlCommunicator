@@ -5,6 +5,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed from MaxlCommunicator to trailtalk.** The name changes in the README and the docs, the
+  dashboard and PWA titles, the PWA manifest and the Android app label; in the packages
+  (`trailtalk-dashboard`, `trailtalk-bridge`, `trailtalk-android`), the Kotlin package and the
+  Android application id `io.github.juice_de_orange.trailtalk` (no APK was ever published under the
+  old one); in the firmware's USB product string, its BLE device name `trailtalk-XXXX` and its image
+  files `trailtalk-<env>-<version>-g<hash>`; and in the build variables and C macros, now
+  `TRAILTALK_*`. The old `MAXL_*` build variables still work and print a warning; the new name wins
+  when both are set, and a release build refuses a development key under either name.
+- Unchanged on purpose, so that nodes, phones and installations from before the rename keep
+  working: the BLE service and characteristic UUIDs, the radio wire format and its version,
+  `BRIDGE_PROTO`, the firmware version, the PWA's storage names and the dashboard's session cookie.
+  A dashboard whose `.env` predates the rename keeps running as the compose project `maxl` on its
+  volume `maxl_pgdata`; `docs/DEPLOYMENT.md` ("Updating from MaxlCommunicator") has the details.
+
 ### Added
 
 - First public release: firmware for the LilyGO T-Echo (radio link with AES-128-CCM, persistent

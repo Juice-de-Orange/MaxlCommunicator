@@ -74,7 +74,7 @@ describe("device rotate without a usable --node-id", () => {
 
 describe("with the database down", () => {
   // Port 1 on loopback: nothing listens there.
-  const env = { ...process.env, DATABASE_URL: "postgres://maxl:unused@127.0.0.1:1/maxl" };
+  const env = { ...process.env, DATABASE_URL: "postgres://trailtalk:unused@127.0.0.1:1/trailtalk" };
 
   it("db:migrate fails in one line", () => {
     const result = run("src/db/migrate.ts", [], env);

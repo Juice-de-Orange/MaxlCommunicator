@@ -13,8 +13,8 @@
  * check across a dozen call sites is how one of them ends up missing it.
  */
 
-#ifndef MAXL_BLE_I_HOST_H
-#define MAXL_BLE_I_HOST_H
+#ifndef TRAILTALK_BLE_I_HOST_H
+#define TRAILTALK_BLE_I_HOST_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -88,4 +88,4 @@ public:
 
 } // namespace ble
 
-#endif // MAXL_BLE_I_HOST_H
+#endif // TRAILTALK_BLE_I_HOST_H

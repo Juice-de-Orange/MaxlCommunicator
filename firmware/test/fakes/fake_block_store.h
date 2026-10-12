@@ -15,8 +15,8 @@
  * asserting.
  */
 
-#ifndef MAXL_TEST_FAKE_BLOCK_STORE_H
-#define MAXL_TEST_FAKE_BLOCK_STORE_H
+#ifndef TRAILTALK_TEST_FAKE_BLOCK_STORE_H
+#define TRAILTALK_TEST_FAKE_BLOCK_STORE_H
 
 #include <cstring>
 #include <vector>
@@ -209,4 +209,4 @@ private:
 
 } // namespace fakes
 
-#endif // MAXL_TEST_FAKE_BLOCK_STORE_H
+#endif // TRAILTALK_TEST_FAKE_BLOCK_STORE_H

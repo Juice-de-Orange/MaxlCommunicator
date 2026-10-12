@@ -14,8 +14,8 @@ import { TEST_DATABASE_SUFFIX, databaseName, openTestDatabase, testDatabaseUrl, 
 
 describe("the test database name", () => {
   it("is the configured database with _test appended", () => {
-    expect(testDatabaseUrl("postgres://maxl:secret@127.0.0.1:5433/maxl")).toBe(
-      "postgres://maxl:secret@127.0.0.1:5433/maxl_test",
+    expect(testDatabaseUrl("postgres://trailtalk:secret@127.0.0.1:5433/trailtalk")).toBe(
+      "postgres://trailtalk:secret@127.0.0.1:5433/trailtalk_test",
     );
   });
 
@@ -26,12 +26,12 @@ describe("the test database name", () => {
   });
 
   it("leaves a name that already ends in _test alone", () => {
-    const url = "postgres://maxl:secret@127.0.0.1:5433/maxl_test";
+    const url = "postgres://trailtalk:secret@127.0.0.1:5433/trailtalk_test";
     expect(testDatabaseUrl(url)).toBe(url);
   });
 
   it("refuses a URL that names no database", () => {
-    expect(() => testDatabaseUrl("postgres://maxl:secret@127.0.0.1:5433")).toThrow(/names no database/);
+    expect(() => testDatabaseUrl("postgres://trailtalk:secret@127.0.0.1:5433")).toThrow(/names no database/);
   });
 });
 

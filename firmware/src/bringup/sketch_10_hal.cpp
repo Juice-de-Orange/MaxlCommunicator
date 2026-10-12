@@ -16,7 +16,7 @@
 
 #include "bringup.h"
 
-#if defined(MAXL_BRINGUP) && MAXL_BRINGUP == 10
+#if defined(TRAILTALK_BRINGUP) && TRAILTALK_BRINGUP == 10
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -261,4 +261,4 @@ void loop()
 
 } // namespace bringup
 
-#endif // MAXL_BRINGUP == 10
+#endif // TRAILTALK_BRINGUP == 10

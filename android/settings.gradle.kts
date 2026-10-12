@@ -39,7 +39,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "maxl-android"
+rootProject.name = "trailtalk-android"
 
 include(":protocol")
 include(":app")

@@ -16,13 +16,25 @@
 # The task is passed through verbatim, so anything Gradle understands works.
 set -euo pipefail
 
-IMAGE="${MAXL_GRADLE_IMAGE:-gradle:8.5-jdk21}"
+# MAXL_GRADLE_IMAGE and MAXL_GRADLE_CACHE are the names from before the rename to
+# trailtalk: still read, with a warning, and the new names win.
+for old in MAXL_GRADLE_IMAGE MAXL_GRADLE_CACHE; do
+    new="TRAILTALK_${old#MAXL_}"
+    if [ -n "${!old:-}" ]; then
+        if [ -n "${!new:-}" ]; then
+            echo "warning: $old is set and ignored -- $new wins; unset it" >&2
+        else
+            echo "warning: $old is the pre-rename name; rename it to $new" >&2
+        fi
+    fi
+done
+IMAGE="${TRAILTALK_GRADLE_IMAGE:-${MAXL_GRADLE_IMAGE:-gradle:8.5-jdk21}}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TASK="${1:-:protocol:test}"
 
 # A cache outside the repo, so a clean checkout does not re-download Gradle's
 # world and a `git status` is not full of it.
-CACHE="${MAXL_GRADLE_CACHE:-$HOME/.cache/maxl-gradle}"
+CACHE="${TRAILTALK_GRADLE_CACHE:-${MAXL_GRADLE_CACHE:-$HOME/.cache/trailtalk-gradle}}"
 mkdir -p "$CACHE"
 
 # The Android SDK, mounted read-only from the host. :protocol does not need it;

@@ -20,8 +20,8 @@
  * peripheral awake, which is a milliamp of its own on a 2.38 mA budget.
  */
 
-#ifndef MAXL_HAL_GNSS_L76K_H
-#define MAXL_HAL_GNSS_L76K_H
+#ifndef TRAILTALK_HAL_GNSS_L76K_H
+#define TRAILTALK_HAL_GNSS_L76K_H
 
 #include "hal/i_gnss.h"
 
@@ -88,4 +88,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_GNSS_L76K_H
+#endif // TRAILTALK_HAL_GNSS_L76K_H

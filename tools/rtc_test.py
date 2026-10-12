@@ -88,7 +88,7 @@ def wait_for_port(timeout=30, expect_bounce=False):
 
 
 def flash():
-    env = dict(os.environ, MAXL_BRINGUP="3")
+    env = dict(os.environ, TRAILTALK_BRINGUP="3")
     for args in ([], ["-t", "upload", "--upload-port", PORT]):
         done = subprocess.run(
             [PYTHON, "-m", "platformio", "run", "-d", os.path.join(ROOT, "firmware"),

@@ -56,7 +56,7 @@ via `scripts/bringup_flag.py`).
 | `-Wframe-larger-than=1024` | the loop task has **4096 bytes**. A single large local object took a device off the USB bus on 2026-08-31, and only a double-click on reset brought it back. When the warning was added it immediately found two more 1600-byte frames in code that had been running for a long time |
 | `check_layering.py` | `CLAUDE.md` §3 |
 | `check_no_alloc.py` | `CLAUDE.md` §3, the allowlist must stay empty |
-| `release_guard.py` | a release build with `MAXL_DEV_KEY` set **must** fail (`CLAUDE.md` §6) |
+| `release_guard.py` | a release build with `TRAILTALK_DEV_KEY` set **must** fail (`CLAUDE.md` §6) |
 | `test_vectors.py` | generates the vector header from `test-vectors/*.json` before compiling |
 
 ## Checking without a device
@@ -127,7 +127,12 @@ visibly and not in the heap.
 None in the repository. The network key is provisioned at runtime over BLE and lives in
 **internal** flash (`hal/key_store_internal`), not on the external chip — that one can be read with
 a clip and a logic analyser. The development key comes
-exclusively from `MAXL_DEV_KEY` and makes a release build fail.
+exclusively from `TRAILTALK_DEV_KEY` and makes a release build fail.
+
+Every bench variable here was called `MAXL_*` before the project was renamed from MaxlCommunicator
+(`MAXL_DEV_KEY`, `MAXL_NODE_ID`, `MAXL_BRINGUP`, `MAXL_LINK_*`, `MAXL_SETUP_TRACE`). The build still
+reads the old names through `scripts/renamed_env.py` and prints a warning for each; the new name wins
+when both are set, and a release build refuses a key under either name.
 
 ## Two nodes on the bench
 
@@ -137,11 +142,11 @@ environment variables:
 ```bash
 KEY=$(openssl rand -hex 16)     # never into a file, never into the repository
 
-MAXL_DEV_KEY=$KEY MAXL_NODE_ID=2 MAXL_BRINGUP=19 \
+TRAILTALK_DEV_KEY=$KEY TRAILTALK_NODE_ID=2 TRAILTALK_BRINGUP=19 \
   ../.venv/bin/python -m platformio run -e bringup -t upload \
   --upload-port "$(../tools/nodes.py --port-of B)"
 
-MAXL_DEV_KEY=$KEY MAXL_NODE_ID=1 MAXL_BRINGUP=19 \
+TRAILTALK_DEV_KEY=$KEY TRAILTALK_NODE_ID=1 TRAILTALK_BRINGUP=19 \
   ../.venv/bin/python -m platformio run -e bringup -t upload \
   --upload-port "$(../tools/nodes.py --port-of A)"
 ```
@@ -152,7 +157,7 @@ are programmed one after the other, and without a start-up delay node 1 would lo
 messages to a board that is still sitting in the bootloader. Each of them costs three
 ARQ attempts and would then remain as `Undelivered` (D18).
 
-`key.shared = 1` in the report means that the key came from `MAXL_DEV_KEY` and
+`key.shared = 1` in the report means that the key came from `TRAILTALK_DEV_KEY` and
 a second board can match it. `0` means that the derivation from the
 DEVICEID took effect — that differs per chip, and then every
 frame fails the MIC, which cannot be distinguished from a dead radio module.

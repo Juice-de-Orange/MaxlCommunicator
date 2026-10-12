@@ -3,11 +3,11 @@
  *
  * `link/` has been finished for three sittings and has never spoken to anything
  * that answers. This is that: the same image on both boards, told apart by
- * MAXL_NODE_ID, sharing one key through MAXL_DEV_KEY.
+ * TRAILTALK_NODE_ID, sharing one key through TRAILTALK_DEV_KEY.
  *
- *     MAXL_DEV_KEY=<32 hex> MAXL_NODE_ID=1 MAXL_BRINGUP=19 pio run -e bringup \
+ *     TRAILTALK_DEV_KEY=<32 hex> TRAILTALK_NODE_ID=1 TRAILTALK_BRINGUP=19 pio run -e bringup \
  *         -t upload --upload-port $(tools/nodes.py --port-of A)
- *     MAXL_DEV_KEY=<same>   MAXL_NODE_ID=2 MAXL_BRINGUP=19 pio run -e bringup \
+ *     TRAILTALK_DEV_KEY=<same>   TRAILTALK_NODE_ID=2 TRAILTALK_BRINGUP=19 pio run -e bringup \
  *         -t upload --upload-port $(tools/nodes.py --port-of B)
  *
  * Node 1 sends, node 2 answers -- but only because ACKs are what the ARQ does;
@@ -48,7 +48,7 @@
 
 #include "bringup.h"
 
-#if defined(MAXL_BRINGUP) && MAXL_BRINGUP == 19
+#if defined(TRAILTALK_BRINGUP) && TRAILTALK_BRINGUP == 19
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -79,25 +79,25 @@ namespace {
 
 /*
  * The three knobs gate 2.1's full runs need, overridable from the environment
- * through scripts/bringup_flag.py -- MAXL_LINK_MESSAGES=100 MAXL_LINK_SF=12
- * MAXL_LINK_START_DELAY_MS=0 for a hub where both boards flash back to back.
+ * through scripts/bringup_flag.py -- TRAILTALK_LINK_MESSAGES=100 TRAILTALK_LINK_SF=12
+ * TRAILTALK_LINK_START_DELAY_MS=0 for a hub where both boards flash back to back.
  */
-#ifndef MAXL_LINK_MESSAGES
-#define MAXL_LINK_MESSAGES 20
+#ifndef TRAILTALK_LINK_MESSAGES
+#define TRAILTALK_LINK_MESSAGES 20
 #endif
-#ifndef MAXL_LINK_SF
-#define MAXL_LINK_SF 9
+#ifndef TRAILTALK_LINK_SF
+#define TRAILTALK_LINK_SF 9
 #endif
-#ifndef MAXL_LINK_START_DELAY_MS
-#define MAXL_LINK_START_DELAY_MS 180000
+#ifndef TRAILTALK_LINK_START_DELAY_MS
+#define TRAILTALK_LINK_START_DELAY_MS 180000
 #endif
 
 /// How many messages node 1 offers. Gate 2.1 wants 100; 20 is a first bench run.
-constexpr uint32_t kMessages = MAXL_LINK_MESSAGES;
+constexpr uint32_t kMessages = TRAILTALK_LINK_MESSAGES;
 
 /// Gate 2.1 runs at SF7, SF9 and SF12; the rendezvous default is 9. Both nodes
 /// must be flashed with the same value -- the sniffer's preamble follows it.
-constexpr uint8_t kSf = MAXL_LINK_SF;
+constexpr uint8_t kSf = TRAILTALK_LINK_SF;
 
 /// See the header: a row further up CLAUDE.md 2.3's table, not a different table.
 constexpr uint16_t kSniffIntervalMs = 500;
@@ -116,7 +116,7 @@ constexpr uint32_t kReportEveryMs = 5000;
  * Three minutes is a cable swap and an upload with room to spare. It is a bench
  * convenience and nothing in link/ knows about it.
  */
-constexpr uint32_t kStartDelayMs = MAXL_LINK_START_DELAY_MS;
+constexpr uint32_t kStartDelayMs = TRAILTALK_LINK_START_DELAY_MS;
 
 Adafruit_FlashTransport_QSPI g_transport;
 Adafruit_SPIFlash g_flash(&g_transport);
@@ -182,7 +182,7 @@ void feed()
     }
 }
 
-#ifdef MAXL_BENCH
+#ifdef TRAILTALK_BENCH
 /*
  * Gates 2.2 and 2.3, sender side. After the ordinary exchange is done, node 1
  * puts three kinds of chosen frames on the air through the bench seam -- every
@@ -283,7 +283,7 @@ void benchStep()
         return;
     }
 }
-#endif // MAXL_BENCH
+#endif // TRAILTALK_BENCH
 
 void printReport()
 {
@@ -436,7 +436,7 @@ void printReport()
      * that comparison needs both reports, which is why both sides print the
      * same keys.
      */
-#ifdef MAXL_BENCH
+#ifdef TRAILTALK_BENCH
     if (bench::nodeId() == 1) {
         static const char *kPhaseNames[] = {"idle", "tamper_payload", "tamper_header", "replay",
                                             "done"};
@@ -484,7 +484,7 @@ void printReport()
 
     if (!g_keyShared) {
         report::verdict("fail",
-                        "no MAXL_DEV_KEY compiled in -- this image derived a key from its own "
+                        "no TRAILTALK_DEV_KEY compiled in -- this image derived a key from its own "
                         "DEVICEID and no second board can match it");
     } else if (bench::nodeId() == 1 && g_sent >= kMessages
                && g_node.queue().countInState(app::MessageState::InFlight) == 0) {
@@ -608,7 +608,7 @@ void loop()
      * case rather than the exception.
      */
     feed();
-#ifdef MAXL_BENCH
+#ifdef TRAILTALK_BENCH
     benchStep();
 #endif
     g_node.tick(now);
@@ -626,4 +626,4 @@ void loop()
 
 } // namespace bringup
 
-#endif // MAXL_BRINGUP == 19
+#endif // TRAILTALK_BRINGUP == 19

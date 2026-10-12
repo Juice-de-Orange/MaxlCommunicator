@@ -29,8 +29,8 @@
  * trailing garbage record cannot move the counter backwards.
  */
 
-#ifndef MAXL_LINK_COUNTER_H
-#define MAXL_LINK_COUNTER_H
+#ifndef TRAILTALK_LINK_COUNTER_H
+#define TRAILTALK_LINK_COUNTER_H
 
 #include <stdint.h>
 
@@ -86,4 +86,4 @@ private:
 
 } // namespace link
 
-#endif // MAXL_LINK_COUNTER_H
+#endif // TRAILTALK_LINK_COUNTER_H

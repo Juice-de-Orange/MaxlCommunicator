@@ -21,8 +21,8 @@
  * and a hole nobody knows about is worse than one that is reported.
  */
 
-#ifndef MAXL_APP_JOURNAL_H
-#define MAXL_APP_JOURNAL_H
+#ifndef TRAILTALK_APP_JOURNAL_H
+#define TRAILTALK_APP_JOURNAL_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -139,4 +139,4 @@ private:
 
 } // namespace app
 
-#endif // MAXL_APP_JOURNAL_H
+#endif // TRAILTALK_APP_JOURNAL_H

@@ -23,8 +23,8 @@
  * driver rather than a blank file.
  */
 
-#ifndef MAXL_HAL_RADIO_SX1262_H
-#define MAXL_HAL_RADIO_SX1262_H
+#ifndef TRAILTALK_HAL_RADIO_SX1262_H
+#define TRAILTALK_HAL_RADIO_SX1262_H
 
 #include "hal/i_radio_link.h"
 
@@ -118,4 +118,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_RADIO_SX1262_H
+#endif // TRAILTALK_HAL_RADIO_SX1262_H

@@ -12,8 +12,8 @@
  * write must not be able to set the network key."
  */
 
-#ifndef MAXL_HAL_I_BLE_TRANSPORT_H
-#define MAXL_HAL_I_BLE_TRANSPORT_H
+#ifndef TRAILTALK_HAL_I_BLE_TRANSPORT_H
+#define TRAILTALK_HAL_I_BLE_TRANSPORT_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -73,4 +73,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_BLE_TRANSPORT_H
+#endif // TRAILTALK_HAL_I_BLE_TRANSPORT_H

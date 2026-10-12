@@ -17,8 +17,8 @@
  * this code can claim about itself.
  */
 
-#ifndef MAXL_HAL_I_GNSS_H
-#define MAXL_HAL_I_GNSS_H
+#ifndef TRAILTALK_HAL_I_GNSS_H
+#define TRAILTALK_HAL_I_GNSS_H
 
 #include "hal/nmea.h"
 
@@ -62,4 +62,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_GNSS_H
+#endif // TRAILTALK_HAL_I_GNSS_H

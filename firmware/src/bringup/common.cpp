@@ -12,8 +12,8 @@
 #include "hal/board.h"
 #include "hal/i2c_recover.h"
 
-#ifndef MAXL_SETUP_TRACE
-#define MAXL_SETUP_TRACE 0
+#ifndef TRAILTALK_SETUP_TRACE
+#define TRAILTALK_SETUP_TRACE 0
 #endif
 
 namespace bringup {
@@ -70,7 +70,7 @@ void commonSetup(uint32_t deadmanMs)
      */
     g_i2cRecovery = hal::recoverI2cBus(hal::board::kPinI2cSda, hal::board::kPinI2cScl);
 
-#if MAXL_SETUP_TRACE
+#if TRAILTALK_SETUP_TRACE
     /*
      * Only under the trace flag, and bounded. traceStep() cannot report a hang
      * the host was not yet listening for, so this waits for the port -- and it
@@ -93,7 +93,7 @@ hal::I2cRecovery i2cRecovery()
 
 void traceStep(const char *step)
 {
-#if MAXL_SETUP_TRACE
+#if TRAILTALK_SETUP_TRACE
     Serial.print("TRACE ");
     Serial.println(step);
     Serial.flush();

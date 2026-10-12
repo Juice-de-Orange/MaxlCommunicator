@@ -8,8 +8,8 @@
  * error after having already acted.
  */
 
-#ifndef MAXL_TEST_FAKE_BLE_H
-#define MAXL_TEST_FAKE_BLE_H
+#ifndef TRAILTALK_TEST_FAKE_BLE_H
+#define TRAILTALK_TEST_FAKE_BLE_H
 
 #include <cstring>
 #include <vector>
@@ -222,4 +222,4 @@ public:
 
 } // namespace fakes
 
-#endif // MAXL_TEST_FAKE_BLE_H
+#endif // TRAILTALK_TEST_FAKE_BLE_H

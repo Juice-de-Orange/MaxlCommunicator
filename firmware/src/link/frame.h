@@ -22,8 +22,8 @@
  * opinion about keys.
  */
 
-#ifndef MAXL_LINK_FRAME_H
-#define MAXL_LINK_FRAME_H
+#ifndef TRAILTALK_LINK_FRAME_H
+#define TRAILTALK_LINK_FRAME_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -109,4 +109,4 @@ bool isKnownType(uint8_t rawType);
 
 } // namespace link
 
-#endif // MAXL_LINK_FRAME_H
+#endif // TRAILTALK_LINK_FRAME_H

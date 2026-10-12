@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "io.github.juice_de_orange.maxlcommunicator"
+    namespace = "io.github.juice_de_orange.trailtalk"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "io.github.juice_de_orange.maxlcommunicator"
+        applicationId = "io.github.juice_de_orange.trailtalk"
 
         /*
          * 26 is where a foreground service needs a notification channel, and

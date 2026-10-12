@@ -15,8 +15,8 @@
  * intact while it is argued about.
  */
 
-#ifndef MAXL_UI_UI_H
-#define MAXL_UI_UI_H
+#ifndef TRAILTALK_UI_UI_H
+#define TRAILTALK_UI_UI_H
 
 #include "hal/canvas.h"
 #include "hal/i_display.h"
@@ -113,4 +113,4 @@ private:
 
 } // namespace ui
 
-#endif // MAXL_UI_UI_H
+#endif // TRAILTALK_UI_UI_H

@@ -17,8 +17,8 @@
  * one place to be right, and so the candidate list is not copied a seventh time.
  */
 
-#ifndef MAXL_HAL_EXTERNAL_FLASH_H
-#define MAXL_HAL_EXTERNAL_FLASH_H
+#ifndef TRAILTALK_HAL_EXTERNAL_FLASH_H
+#define TRAILTALK_HAL_EXTERNAL_FLASH_H
 
 #include <stdint.h>
 
@@ -41,4 +41,4 @@ bool openExternalFlash(Adafruit_FlashTransport_QSPI &transport, Adafruit_SPIFlas
 
 } // namespace hal
 
-#endif // MAXL_HAL_EXTERNAL_FLASH_H
+#endif // TRAILTALK_HAL_EXTERNAL_FLASH_H

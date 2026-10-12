@@ -16,8 +16,8 @@
  * for that reason.
  */
 
-#ifndef MAXL_HAL_LED_H
-#define MAXL_HAL_LED_H
+#ifndef TRAILTALK_HAL_LED_H
+#define TRAILTALK_HAL_LED_H
 
 #include <stdint.h>
 
@@ -39,4 +39,4 @@ private:
 
 } // namespace hal
 
-#endif // MAXL_HAL_LED_H
+#endif // TRAILTALK_HAL_LED_H

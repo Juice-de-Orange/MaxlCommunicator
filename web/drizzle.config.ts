@@ -5,7 +5,7 @@ export default defineConfig({
   schema: "./src/db/schema.ts",
   out: "./drizzle",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgres://maxl:maxl@127.0.0.1:5433/maxl",
+    url: process.env.DATABASE_URL ?? "postgres://trailtalk:trailtalk@127.0.0.1:5433/trailtalk",
   },
   strict: true,
   verbose: true,

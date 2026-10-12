@@ -15,8 +15,8 @@
  * Errors are reported, never thrown -- CLAUDE.md 6 builds with -fno-exceptions.
  */
 
-#ifndef MAXL_HAL_I_BLOCK_STORE_H
-#define MAXL_HAL_I_BLOCK_STORE_H
+#ifndef TRAILTALK_HAL_I_BLOCK_STORE_H
+#define TRAILTALK_HAL_I_BLOCK_STORE_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -118,4 +118,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_BLOCK_STORE_H
+#endif // TRAILTALK_HAL_I_BLOCK_STORE_H

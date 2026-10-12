@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-MaxlCommunicator is developed on `main`; fixes land there. Please test against the latest commit
+trailtalk is developed on `main`; fixes land there. Please test against the latest commit
 before reporting.
 
 ## Reporting a vulnerability

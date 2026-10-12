@@ -1,5 +1,5 @@
 /*
- * Board variant implementation for the LilyGO T-Echo (MaxlCommunicator).
+ * Board variant implementation for the LilyGO T-Echo (trailtalk).
  *
  * Derived in part from the Adafruit nRF52 Arduino core variant template.
  * Copyright (c) 2014-2015 Arduino LLC.  All right reserved.

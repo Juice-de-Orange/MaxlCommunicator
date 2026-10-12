@@ -17,8 +17,8 @@
  * millisecond, so a future edit that drifts from the spec fails the build.
  */
 
-#ifndef MAXL_LINK_AIRTIME_H
-#define MAXL_LINK_AIRTIME_H
+#ifndef TRAILTALK_LINK_AIRTIME_H
+#define TRAILTALK_LINK_AIRTIME_H
 
 #include <stdint.h>
 
@@ -82,4 +82,4 @@ uint32_t ackWindowMs(uint8_t sf);
 
 } // namespace link
 
-#endif // MAXL_LINK_AIRTIME_H
+#endif // TRAILTALK_LINK_AIRTIME_H

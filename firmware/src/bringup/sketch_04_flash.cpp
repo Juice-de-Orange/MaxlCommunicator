@@ -40,7 +40,7 @@
 
 #include "bringup.h"
 
-#if defined(MAXL_BRINGUP) && MAXL_BRINGUP == 4
+#if defined(TRAILTALK_BRINGUP) && TRAILTALK_BRINGUP == 4
 
 #include <Arduino.h>
 
@@ -268,7 +268,7 @@ void loop()
         // done once, at the end, so they do not add 100 erase cycles of their own.
         //
         // The begin/end pair is not decoration. tools/bringup_run.py collects
-        // from a "MAXL-BRINGUP 04 begin" through the matching "end" and stops;
+        // from a "TRAILTALK-BRINGUP 04 begin" through the matching "end" and stops;
         // without the frame it reads this report for ever and reports no
         // complete cycle. The first version of this block omitted it, and the
         // result was a gate that had actually passed on the device sitting
@@ -345,4 +345,4 @@ void loop()
 
 } // namespace bringup
 
-#endif // MAXL_BRINGUP == 4
+#endif // TRAILTALK_BRINGUP == 4

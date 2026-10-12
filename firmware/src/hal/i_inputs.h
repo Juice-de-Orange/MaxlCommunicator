@@ -12,8 +12,8 @@
  * still a working device.
  */
 
-#ifndef MAXL_HAL_I_INPUTS_H
-#define MAXL_HAL_I_INPUTS_H
+#ifndef TRAILTALK_HAL_I_INPUTS_H
+#define TRAILTALK_HAL_I_INPUTS_H
 
 #include "hal/press_detector.h"
 
@@ -74,4 +74,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_INPUTS_H
+#endif // TRAILTALK_HAL_I_INPUTS_H

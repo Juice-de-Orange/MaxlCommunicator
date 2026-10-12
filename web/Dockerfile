@@ -1,5 +1,5 @@
 # =============================================================================
-# MaxlCommunicator dashboard + bridge.
+# trailtalk dashboard + bridge.
 #
 # Build context is the repository root, not web/. Two reasons, and both are
 # load-bearing:
@@ -11,7 +11,7 @@
 #     would mean a second certificate and a cross-origin POST to the ingest
 #     endpoint for no gain at all.
 #
-#   docker build -f web/Dockerfile -t maxl-web .
+#   docker build -f web/Dockerfile -t trailtalk-web .
 # =============================================================================
 
 # node:22-slim (Debian, glibc) rather than -alpine (musl), and this is not a
@@ -116,7 +116,7 @@ RUN chmod +x /usr/local/bin/entrypoint
 # What the server above was built for, so the entrypoint can tell a changed
 # DASHBOARD_HOST from one that is in effect.
 ARG DASHBOARD_HOST=""
-ENV MAXL_BUILT_FOR_HOST=$DASHBOARD_HOST
+ENV TRAILTALK_BUILT_FOR_HOST=$DASHBOARD_HOST
 
 # Never root. The process needs to read its own files and nothing else.
 USER node

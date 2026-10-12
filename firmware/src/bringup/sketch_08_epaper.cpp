@@ -29,7 +29,7 @@
 
 #include "bringup.h"
 
-#if defined(MAXL_BRINGUP) && MAXL_BRINGUP == 8
+#if defined(TRAILTALK_BRINGUP) && TRAILTALK_BRINGUP == 8
 
 #include <Arduino.h>
 
@@ -107,7 +107,7 @@ void drawTestPattern(uint32_t fullMs)
 
         g_display.setTextColor(GxEPD_BLACK);
         g_display.setCursor(24, 70);
-        g_display.print("MAXL bringup 08");
+        g_display.print("trailtalk bringup 08");
         g_display.setCursor(24, 86);
         g_display.print("SSD1681 / 200x200");
         g_display.setCursor(24, 110);
@@ -229,4 +229,4 @@ void loop()
 
 } // namespace bringup
 
-#endif // MAXL_BRINGUP == 8
+#endif // TRAILTALK_BRINGUP == 8

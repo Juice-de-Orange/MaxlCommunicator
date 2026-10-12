@@ -18,8 +18,8 @@
  * interface's read is for the crypto layer, not for a client.
  */
 
-#ifndef MAXL_HAL_I_KEY_STORE_H
-#define MAXL_HAL_I_KEY_STORE_H
+#ifndef TRAILTALK_HAL_I_KEY_STORE_H
+#define TRAILTALK_HAL_I_KEY_STORE_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -59,4 +59,4 @@ public:
 
 } // namespace hal
 
-#endif // MAXL_HAL_I_KEY_STORE_H
+#endif // TRAILTALK_HAL_I_KEY_STORE_H

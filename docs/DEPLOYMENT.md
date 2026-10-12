@@ -20,7 +20,7 @@ Set at least:
 | `POSTGRES_PASSWORD` | The database password; compose refuses to start without it. Use the same value in `DATABASE_URL` if you run tools from the host. |
 | `DASHBOARD_PASSWORD` | The single dashboard login (`openssl rand -base64 24`). |
 | `SESSION_SECRET` | Signs the session cookie (`openssl rand -hex 32`). |
-| `DASHBOARD_HOST` | The public host name the reverse proxy of step 3 serves, e.g. `maxl.example.com` (with the port if it is not 443: `maxl.example.com:8443`). **Required behind a TLS proxy** — without it the login form answers 403. Leave it empty if the dashboard is only ever opened as `http://localhost:4321`. |
+| `DASHBOARD_HOST` | The public host name the reverse proxy of step 3 serves, e.g. `trailtalk.example.com` (with the port if it is not 443: `trailtalk.example.com:8443`). **Required behind a TLS proxy** — without it the login form answers 403. Leave it empty if the dashboard is only ever opened as `http://localhost:4321`. |
 
 `WEB_PORT` (default 4321) and `POSTGRES_PORT` (default 5433) are the loopback ports on the host.
 
@@ -44,7 +44,7 @@ migration step. Both ports are published on `127.0.0.1` only.
 Any reverse proxy that terminates TLS with a publicly trusted certificate works. With Caddy:
 
 ```caddyfile
-maxl.example.com {
+trailtalk.example.com {
     reverse_proxy 127.0.0.1:4321
 }
 ```
@@ -55,10 +55,10 @@ With nginx (certificate from your ACME client of choice):
 server {
     listen 443 ssl;
     http2 on;
-    server_name maxl.example.com;
+    server_name trailtalk.example.com;
 
-    ssl_certificate     /etc/letsencrypt/live/maxl.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/maxl.example.com/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/trailtalk.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/trailtalk.example.com/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:4321;
@@ -97,7 +97,7 @@ docker compose exec web ./node_modules/.bin/tsx scripts/device.ts add --node-id 
 docker compose exec web ./node_modules/.bin/tsx scripts/device.ts list
 ```
 
-Enter the printed token in the PWA (open `https://maxl.example.com/app/` on the phone) or the
+Enter the printed token in the PWA (open `https://trailtalk.example.com/app/` on the phone) or the
 Android client when you pair a node.
 
 ## 5. Backups
@@ -106,7 +106,7 @@ All state is in the PostgreSQL volume; the event log is append-only, so a dump i
 history:
 
 ```bash
-docker compose exec -T postgres pg_dump -U maxl -d maxl --clean --if-exists > maxl-$(date +%F).sql
+docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' > trailtalk-$(date +%F).sql
 ```
 
 To restore, stop the dashboard, feed the dump back in and start it again. The dump was written
@@ -115,11 +115,12 @@ with `--clean --if-exists`, so it replaces the tables that are there — on a fr
 
 ```bash
 docker compose stop web
-docker compose exec -T postgres psql -U maxl -d maxl -v ON_ERROR_STOP=1 < maxl-2026-10-03.sql
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < trailtalk-2026-10-03.sql
 docker compose start web
 ```
 
-(`-U` and `-d` are `POSTGRES_USER` and `POSTGRES_DB`, if you changed them.)
+Both commands take the role and the database from the container's own `POSTGRES_USER` and
+`POSTGRES_DB`, so they are the same for every installation, including one from before the rename.
 
 ## Updating
 
@@ -130,3 +131,40 @@ docker compose up -d --build
 
 Migrations run on start. The protocol versioning rules — what has to be updated together — are in
 `docs/versioning-and-updates.md`.
+
+### Updating from MaxlCommunicator
+
+The project was called MaxlCommunicator until its first release. An installation from before the
+rename updates exactly as above and keeps its data without any extra step:
+
+- Its `.env` has no `COMPOSE_PROJECT_NAME`, so compose still runs it as the project `maxl` — the
+  same containers, the same data volume `maxl_pgdata`, the same role and database `maxl`. The web
+  container says so in its log on every start (`note: running as compose project 'maxl' …`). That
+  is the intended state, not a fault.
+- **Do not** add `COMPOSE_PROJECT_NAME=trailtalk` to that `.env`, and do not copy the new
+  `.env.example` over it: compose would start a second, empty database next to the old volume, and
+  the dashboard would show no nodes and no history. Your data would still be in `maxl_pgdata`.
+- Ingest tokens, the dashboard password and the session cookie stay valid. The PWA keeps its
+  pairing and every event it still holds, because its storage names did not change.
+- Nodes need no reflash. Images from before the rename advertise as `Maxl-XXXX`, new ones as
+  `trailtalk-XXXX`; the PWA and the Android client find both by the service UUID.
+- The checkout's `origin` may still say `…/MaxlCommunicator.git`. GitHub redirects it; to use the
+  new name: `git remote set-url origin https://github.com/Juice-de-Orange/trailtalk.git`.
+
+Moving the installation to the new names is optional. It is a backup into a new project and a
+restore, and the old volume stays untouched until you remove it yourself:
+
+```bash
+docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner' > before-rename.sql
+docker compose down        # stops the project `maxl`; the volume maxl_pgdata stays
+# in .env: COMPOSE_PROJECT_NAME=trailtalk, POSTGRES_USER=trailtalk, POSTGRES_DB=trailtalk,
+#          and the same role and database in DATABASE_URL
+docker compose up -d --build
+docker compose stop web
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < before-rename.sql
+docker compose start web
+```
+
+`--no-owner` because the tables move from the role `maxl` to the role `trailtalk`. Check the
+dashboard and `device:list` (section 4) before you remove the old volume and image with
+`docker volume rm maxl_pgdata` and `docker image rm maxl-web`.

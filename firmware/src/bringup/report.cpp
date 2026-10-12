@@ -22,12 +22,12 @@ void emit(const char *prefix, const char *fmt, va_list args)
 
 void begin(uint8_t sketch)
 {
-    Serial.printf("MAXL-BRINGUP %02u begin\n", static_cast<unsigned>(sketch));
+    Serial.printf("TRAILTALK-BRINGUP %02u begin\n", static_cast<unsigned>(sketch));
 }
 
 void end(uint8_t sketch)
 {
-    Serial.printf("MAXL-BRINGUP %02u end\n", static_cast<unsigned>(sketch));
+    Serial.printf("TRAILTALK-BRINGUP %02u end\n", static_cast<unsigned>(sketch));
 }
 
 void info(const char *fmt, ...)

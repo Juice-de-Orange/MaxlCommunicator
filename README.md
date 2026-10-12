@@ -1,6 +1,6 @@
-# MaxlCommunicator — a LoRa field communicator with its own firmware, phone bridge and dashboard
+# trailtalk — a LoRa field communicator with its own firmware, phone bridge and dashboard
 
-MaxlCommunicator turns two (or more) **LilyGO T-Echo** boards (nRF52840 + SX1262, EU 868 MHz,
+trailtalk turns two (or more) **LilyGO T-Echo** boards (nRF52840 + SX1262, EU 868 MHz,
 e-paper) into a small encrypted text, position and telemetry link that works without any network.
 Everything is written from scratch — no Meshtastic, no SoftRF: the radio protocol, the firmware,
 a Web Bluetooth phone bridge (PWA), a native Android client and a server dashboard.
@@ -12,6 +12,11 @@ a Web Bluetooth phone bridge (PWA), a native Android client and a server dashboa
 </p>
 
 <sub>Dashboard with synthetic seed data (`npm run seed`). A photo of the boards follows.</sub>
+
+The project was called **MaxlCommunicator** until its first release. Nodes, phones and dashboards
+from before the rename keep working with the new versions: the radio and BLE identifiers did not
+change, and the old environment variable names are still read, with a warning
+([updating an existing dashboard](docs/DEPLOYMENT.md#updating-from-maxlcommunicator)).
 
 **`CLAUDE.md` is the normative specification.** Where this README and `CLAUDE.md` disagree,
 `CLAUDE.md` wins.
@@ -135,8 +140,9 @@ On Ubuntu 24.04 `python3 -m venv` ships without pip unless `python3-venv` is ins
 port with a 1200-bps touch, not the bootloader's drive letter.
 
 The network key is provisioned over BLE at runtime. For bench work a development key can come from
-the environment variable `MAXL_DEV_KEY` — never from a file — and a release build with it set
-fails on purpose (`CLAUDE.md` §6).
+the environment variable `TRAILTALK_DEV_KEY` — never from a file — and a release build with it set
+fails on purpose (`CLAUDE.md` §6). The bench variables' names from before the rename (`MAXL_DEV_KEY`,
+`MAXL_NODE_ID`, `MAXL_BRINGUP`, …) still work and print a warning; the new name wins if both are set.
 
 ## Bring-up on the device
 

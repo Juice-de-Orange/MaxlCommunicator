@@ -17,8 +17,8 @@
  * implementations rather than each side having its own idea of the layout.
  */
 
-#ifndef MAXL_LINK_PAYLOADS_H
-#define MAXL_LINK_PAYLOADS_H
+#ifndef TRAILTALK_LINK_PAYLOADS_H
+#define TRAILTALK_LINK_PAYLOADS_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -73,4 +73,4 @@ size_t encodeText(const uint8_t *utf8, size_t len, uint8_t *out);
 
 } // namespace link
 
-#endif // MAXL_LINK_PAYLOADS_H
+#endif // TRAILTALK_LINK_PAYLOADS_H

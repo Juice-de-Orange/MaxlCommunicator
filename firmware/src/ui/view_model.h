@@ -20,8 +20,8 @@
  *     can hold the last one it drew.
  */
 
-#ifndef MAXL_UI_VIEW_MODEL_H
-#define MAXL_UI_VIEW_MODEL_H
+#ifndef TRAILTALK_UI_VIEW_MODEL_H
+#define TRAILTALK_UI_VIEW_MODEL_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -128,4 +128,4 @@ struct ViewModel {
 
 } // namespace ui
 
-#endif // MAXL_UI_VIEW_MODEL_H
+#endif // TRAILTALK_UI_VIEW_MODEL_H

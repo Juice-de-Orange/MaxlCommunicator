@@ -23,13 +23,13 @@
  *      so nothing published can cover it. That one is about the wire format not
  *      moving underneath us.
  *
- * Debug builds only. MAXL_SELF_TEST is defined by scripts/test_vectors.py, which
+ * Debug builds only. TRAILTALK_SELF_TEST is defined by scripts/test_vectors.py, which
  * also generates the header of vectors this reads. In a release build the whole
  * thing compiles to a result that says so.
  */
 
-#ifndef MAXL_LINK_SELF_TEST_H
-#define MAXL_LINK_SELF_TEST_H
+#ifndef TRAILTALK_LINK_SELF_TEST_H
+#define TRAILTALK_LINK_SELF_TEST_H
 
 #include <stdint.h>
 
@@ -63,4 +63,4 @@ SelfTestResult runCryptoSelfTest();
 
 } // namespace link
 
-#endif // MAXL_LINK_SELF_TEST_H
+#endif // TRAILTALK_LINK_SELF_TEST_H
