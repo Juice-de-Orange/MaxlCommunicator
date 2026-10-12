@@ -390,6 +390,13 @@ private:
     uint32_t ackSeenTotal_ = 0;
     uint32_t ackTxTotal_ = 0;
     uint8_t currentSf_ = 9;
+    /// What the radio was last told: the band it is in and the preamble a data
+    /// frame carries. Every budget question and charge uses these, never the
+    /// configuration (issue #39).
+    link::Band radioBand_ = link::kRendezvousBand;
+    uint16_t radioPreamble_ = link::kStandardPreambleSymbols;
+    /// A band, power or sniff-interval change waiting for the radio to be free.
+    bool radioRetunePending_ = false;
     size_t txSlot_ = link::kMaxOutstanding;
     uint8_t lastStatusFlags_ = 0xFF; ///< 0xFF = no EVT_STATUS journaled yet
 
@@ -398,7 +405,16 @@ private:
     size_t benchTxFrameLen_ = 0;
 #endif
 
+    /// The band the configuration asks for. What the radio is tuned to is
+    /// radioBand_, and that is what airtime is charged to (issue #39).
     link::Band activeBand() const;
+    link::Band txBand() const;
+    /// Set band, power, SF and the data-frame preamble on the radio, and record
+    /// them as what the budget is charged for. False if the radio refused.
+    bool tuneRadio(uint8_t sf);
+    /// Apply a setting changed over BLE once nothing is on the air.
+    void retuneIfPending();
+    bool radioBusy() const;
     /// Airtime of a POSITION-sized data frame as it would go out now, for the
     /// budget questions that are not about one particular frame.
     uint32_t representativeAirtimeUs() const;

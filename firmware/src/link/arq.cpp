@@ -128,6 +128,19 @@ uint32_t Arq::budgetGate(Message &message, uint32_t nowMs)
     return delayMs;
 }
 
+void Arq::retune(uint8_t sf, uint16_t preambleSymbols, Band band)
+{
+    for (size_t i = 0; i < kMaxOutstanding; ++i) {
+        Message &message = messages_[i];
+        if (!message.used || message.awaitingRadio) {
+            continue;
+        }
+        message.sf = sf;
+        message.preambleSymbols = preambleSymbols;
+        message.band = band;
+    }
+}
+
 size_t Arq::submit(const uint8_t *frame, size_t frameLen, uint8_t seq, uint8_t sf,
                    uint16_t preambleSymbols, Band band, bool ackRequested, uint32_t nowMs)
 {

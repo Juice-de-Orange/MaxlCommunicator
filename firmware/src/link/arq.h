@@ -118,6 +118,14 @@ public:
     size_t submit(const uint8_t *frame, size_t frameLen, uint8_t seq, uint8_t sf,
                   uint16_t preambleSymbols, Band band, bool ackRequested, uint32_t nowMs);
 
+    /*
+     * The radio has been retuned: every message that is not on the air now
+     * goes out with this SF, preamble and band, so the budget is asked about
+     * those (issue #39). A message the radio is sending keeps what it has; its
+     * completion is charged by the caller with what was actually sent.
+     */
+    void retune(uint8_t sf, uint16_t preambleSymbols, Band band);
+
     /// Drive the machine. Call often; it does nothing until something is due.
     ArqOutcome poll(uint32_t nowMs);
 

@@ -128,6 +128,13 @@ public:
             return hal::RadioResult::Busy;
         }
         transmitting_ = true;
+        // What this frame really went out with -- the budget must be charged
+        // for exactly this (issue #39).
+        lastTxSf = modulation_.spreadingFactor;
+        lastTxFrequencyHz = modulation_.frequencyHz;
+        lastTxPowerDbm = modulation_.txPowerDbm;
+        lastTxPreambleSymbols = preambleSymbols_;
+        lastTxLength = len;
         transmitDoneMs_ =
             *nowMs_ + link::timeOnAirMs(modulation_.spreadingFactor,
                                         static_cast<uint8_t>(len), preambleSymbols_);
@@ -257,6 +264,16 @@ public:
 
     bool transmitting() const { return transmitting_; }
     uint8_t spreadingFactor() const { return modulation_.spreadingFactor; }
+    uint32_t frequencyHz() const { return modulation_.frequencyHz; }
+    int8_t txPowerDbm() const { return modulation_.txPowerDbm; }
+    uint16_t preambleSymbols() const { return preambleSymbols_; }
+
+    /// The radio settings the last transmission actually used.
+    uint8_t lastTxSf = 0;
+    uint32_t lastTxFrequencyHz = 0;
+    int8_t lastTxPowerDbm = 0;
+    uint16_t lastTxPreambleSymbols = 0;
+    size_t lastTxLength = 0;
 
     /// Set false to model a node that is switched off.
     bool powered = true;

@@ -61,9 +61,17 @@ uint32_t Node::representativeAirtimeUs() const
      * name a moment at which no real data frame was legal yet: at the default
      * sniff interval the frame costs 2196 ms.
      */
-    return link::timeOnAirUs(currentSf_, kRepresentativeFrameBytes,
-                             link::preambleSymbolsForInterval(currentSf_,
-                                                              config_.sniffIntervalMs));
+    const uint16_t preamble = radio_ != nullptr
+                                  ? radioPreamble_
+                                  : link::preambleSymbolsForInterval(currentSf_,
+                                                                     config_.sniffIntervalMs);
+    return link::timeOnAirUs(currentSf_, kRepresentativeFrameBytes, preamble);
+}
+
+link::Band Node::txBand() const
+{
+    // The band the next frame goes out in: the radio's, once there is one.
+    return radio_ != nullptr ? radioBand_ : activeBand();
 }
 
 bool Node::begin(uint16_t nodeId)
@@ -171,23 +179,74 @@ void Node::applySpreadingFactor(uint8_t sf)
         return;
     }
 
-    const link::BandPlan &plan = link::plan(activeBand());
+    tuneRadio(sf);
+}
+
+bool Node::radioBusy() const
+{
+    // A frame on the air, or the continuous window waiting for its ACK: the
+    // radio's settings belong to that exchange until it is over.
+    bool busy = txSlot_ < link::kMaxOutstanding || ackTxInFlight_ || inAckWindow_;
+#ifdef MAXL_BENCH
+    busy = busy || benchTxInFlight_;
+#endif
+    return busy;
+}
+
+bool Node::tuneRadio(uint8_t sf)
+{
+    /*
+     * The one place the radio's band, power, SF and data-frame preamble are
+     * set, and the one place the node's record of them changes.
+     *
+     * Issue #39: the budget used to be charged from the CONFIGURATION, while
+     * the radio was only retuned on a spreading-factor change. A band set over
+     * BLE was budgeted at once and transmitted on later -- a node switched from
+     * g1 back to g3 spent g3's 10 % on 868.1 MHz -- and a new sniff interval
+     * was charged for a preamble the frame did not carry. Now every budget
+     * question and every charge uses radioBand_ and radioPreamble_, which are
+     * what the chip was last told, and a setting changes the chip as soon as
+     * it is free (retuneIfPending).
+     */
+    const link::Band band = activeBand();
+    const link::BandPlan &plan = link::plan(band);
     hal::Modulation modulation{};
     modulation.spreadingFactor = sf;
     modulation.frequencyHz = plan.defaultHz;
-    modulation.txPowerDbm = link::clampTxPowerDbm(activeBand(), config_.txPowerDbm);
+    // Clamped here and not trusted from the config: CLAUDE.md 1.3 puts the ERP
+    // ceiling "in code, not by the user".
+    modulation.txPowerDbm = link::clampTxPowerDbm(band, config_.txPowerDbm);
     if (radio_->setModulation(modulation) != hal::RadioResult::Ok) {
-        return;
+        return false;
     }
     currentSf_ = sf;
+    radioBand_ = band;
 
-    // The preamble and the sniff cadence move with the SF, on both sides, from
-    // the same function -- or startReceiveDutyCycleAuto drops packets
-    // (REVIEW.md C5, and the attachRadio comment below).
-    const uint16_t preamble =
-        link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs);
-    radio_->setPreambleLength(preamble);
-    radio_->startReceiveDutyCycle(currentSf_ > 10 ? 12 : 8);
+    /*
+     * The preamble is computed from the sniff interval, not chosen, and it
+     * moves with the SF on both sides from the same function.
+     *
+     * REVIEW.md C5: startReceiveDutyCycleAuto() silently drops 10-25 % of
+     * packets unless the sender's preamble spans one sniff interval. Both sides
+     * derive it from the same function so there is no constant for anyone to get
+     * out of step.
+     */
+    radioPreamble_ = link::preambleSymbolsForInterval(sf, config_.sniffIntervalMs);
+    radio_->setPreambleLength(radioPreamble_);
+    radio_->startReceiveDutyCycle(sf > 10 ? 12 : 8);
+
+    // Messages waiting in the ARQ go out with these settings now, so that is
+    // what the budget has to be asked about for them.
+    arq_.retune(sf, radioPreamble_, band);
+    radioRetunePending_ = false;
+    return true;
+}
+
+void Node::retuneIfPending()
+{
+    if (radio_ != nullptr && radioRetunePending_ && !radioBusy()) {
+        tuneRadio(currentSf_);
+    }
 }
 
 // --- ble::IHost ----------------------------------------------------------
@@ -328,6 +387,9 @@ uint8_t Node::setConfig(uint32_t configVersion, const uint8_t *tlvs, size_t leng
                 applied = false;
                 break;
             }
+            if (value != config_.sniffIntervalMs) {
+                radioRetunePending_ = true;  // issue #39: the radio follows, see below
+            }
             config_.sniffIntervalMs = value;
             break;
         }
@@ -335,6 +397,9 @@ uint8_t Node::setConfig(uint32_t configVersion, const uint8_t *tlvs, size_t leng
             if (tlv.length != 1 || tlv.value[0] > 1) {
                 applied = false;
                 break;
+            }
+            if (tlv.value[0] != config_.band) {
+                radioRetunePending_ = true;
             }
             config_.band = tlv.value[0];
             break;
@@ -363,6 +428,9 @@ uint8_t Node::setConfig(uint32_t configVersion, const uint8_t *tlvs, size_t leng
              * code, not by the user." The cap lives in link/band and applies
              * whatever arrives here.
              */
+            if (static_cast<int8_t>(tlv.value[0]) != config_.txPowerDbm) {
+                radioRetunePending_ = true;
+            }
             config_.txPowerDbm = static_cast<int8_t>(tlv.value[0]);
             break;
         case ble::ConfigTlv::TelemetryIntervalS:
@@ -412,6 +480,14 @@ uint8_t Node::setConfig(uint32_t configVersion, const uint8_t *tlvs, size_t leng
     }
 
     appliedConfigVersion_ = configVersion;
+
+    /*
+     * Band, power and sniff interval reach the radio now, or -- with a frame on
+     * the air or an ACK window open -- as soon as that exchange is over
+     * (pumpRadio). Until then nothing is charged for the new values: every
+     * budget question and charge uses what the radio actually has (issue #39).
+     */
+    retuneIfPending();
 
     /*
      * Journal the acknowledgement, not just emit it.
@@ -586,6 +662,10 @@ uint8_t Node::factoryReset()
     keys_.eraseAll();
     activeSlot_ = 0;
     config_ = NodeConfig{};
+    // The defaults may name another band, power or sniff interval than the
+    // radio has; it follows like any other configuration change (issue #39).
+    radioRetunePending_ = true;
+    retuneIfPending();
     return 0;
 }
 
@@ -608,7 +688,7 @@ uint8_t Node::linkTest(uint16_t dst, uint8_t count, uint8_t sf)
      * everything else and will return ERR_BUDGET_EXHAUSTED rather than queueing,
      * because a delayed link test is a useless link test."
      */
-    if (!budget_.canTransmit(activeBand(), representativeAirtimeUs())) {
+    if (!budget_.canTransmit(txBand(), representativeAirtimeUs())) {
         return static_cast<uint8_t>(ble::BridgeError::BudgetExhausted);
     }
     return 0;
@@ -656,30 +736,8 @@ bool Node::attachRadio(hal::IRadioLink &radio, link::IJitterSource &jitter)
     txSlot_ = link::kMaxOutstanding;
     adaptiveSf_.resetToRendezvous();
 
-    const link::BandPlan &plan = link::plan(activeBand());
-    hal::Modulation modulation{};
-    modulation.spreadingFactor = currentSf_;
-    modulation.frequencyHz = plan.defaultHz;
-    // Clamped here and not trusted from the config: CLAUDE.md 1.3 puts the ERP
-    // ceiling "in code, not by the user".
-    modulation.txPowerDbm = link::clampTxPowerDbm(activeBand(), config_.txPowerDbm);
-    if (radio.setModulation(modulation) != hal::RadioResult::Ok) {
-        return false;
-    }
-
-    /*
-     * The preamble is computed from the sniff interval, not chosen.
-     *
-     * REVIEW.md C5: startReceiveDutyCycleAuto() silently drops 10-25 % of
-     * packets unless the sender's preamble spans one sniff interval. Both sides
-     * derive it from the same function so there is no constant for anyone to get
-     * out of step.
-     */
-    const uint16_t preamble =
-        link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs);
-    radio.setPreambleLength(preamble);
-    radio.startReceiveDutyCycle(currentSf_ > 10 ? 12 : 8);
-    return true;
+    inAckWindow_ = false;
+    return tuneRadio(currentSf_);
 }
 
 size_t Node::buildFrame(uint16_t dst, link::FrameType type, const uint8_t *payload, size_t length,
@@ -753,10 +811,8 @@ void Node::promoteQueued(uint32_t nowMs)
         // The preamble the radio sends a data frame with: it spans the peer's
         // sniff interval (CLAUDE.md 2.3), and the budget must be asked about
         // that frame, not about an 8-symbol one (issue #1).
-        const uint16_t preamble =
-            link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs);
-        const size_t slot = arq_.submit(frame, frameLen, message.seq, currentSf_, preamble,
-                                        activeBand(), wantsAck, nowMs);
+        const size_t slot = arq_.submit(frame, frameLen, message.seq, currentSf_, radioPreamble_,
+                                        radioBand_, wantsAck, nowMs);
         if (slot >= link::kMaxOutstanding) {
             // The ARQ window is full. The message stays Pending and is offered
             // again next time round -- nothing is lost, it just waits.
@@ -851,11 +907,10 @@ bool Node::serviceAcks(uint32_t nowMs)
         const bool insideWindow =
             sinceHeardMs + shortAirtimeMs <= link::ackWindowMs(currentSf_);
         const uint16_t preamble =
-            insideWindow ? link::kStandardPreambleSymbols
-                         : link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs);
+            insideWindow ? link::kStandardPreambleSymbols : radioPreamble_;
         const uint32_t airtimeUs =
             link::timeOnAirUs(currentSf_, static_cast<uint8_t>(ackFrameLen), preamble);
-        if (budget_.earliestLegalTxDelayMs(activeBand(), airtimeUs) > 0) {
+        if (budget_.earliestLegalTxDelayMs(radioBand_, airtimeUs) > 0) {
             continue;
         }
 
@@ -878,8 +933,7 @@ bool Node::serviceAcks(uint32_t nowMs)
         radio_->setPreambleLength(preamble);
         if (radio_->transmit(frame, built) != hal::RadioResult::Ok) {
             // Radio busy. The ACK stays pending and is offered again next pump.
-            radio_->setPreambleLength(
-                link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs));
+            radio_->setPreambleLength(radioPreamble_);
             return false;
         }
         ackTxInFlight_ = true;
@@ -905,6 +959,9 @@ void Node::pumpRadio(uint32_t nowMs)
     if (inAckWindow_ && static_cast<int32_t>(nowMs - ackWindowUntilMs_) >= 0) {
         closeAckWindow();
     }
+    // A setting changed while the radio was busy takes effect before anything
+    // else is sent.
+    retuneIfPending();
     promoteQueued(nowMs);
 
     /*
@@ -1047,11 +1104,10 @@ uint8_t Node::benchTransmit(const uint8_t *frame, size_t length)
         return static_cast<uint8_t>(ble::BridgeError::Busy);
     }
 
-    const uint16_t preamble =
-        link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs);
+    const uint16_t preamble = radioPreamble_;
     const uint32_t airtimeUs =
         link::timeOnAirUs(currentSf_, static_cast<uint8_t>(length), preamble);
-    if (budget_.earliestLegalTxDelayMs(activeBand(), airtimeUs) > 0) {
+    if (budget_.earliestLegalTxDelayMs(radioBand_, airtimeUs) > 0) {
         return static_cast<uint8_t>(ble::BridgeError::BudgetExhausted);
     }
     if (radio_->transmit(frame, length) != hal::RadioResult::Ok) {
@@ -1069,10 +1125,9 @@ void Node::onTransmitComplete(hal::RadioResult result)
     if (benchTxInFlight_) {
         benchTxInFlight_ = false;
         if (result == hal::RadioResult::Ok) {
-            const uint16_t preamble =
-                link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs);
+            const uint16_t preamble = radioPreamble_;
             budget_.recordTransmission(
-                activeBand(),
+                radioBand_,
                 link::timeOnAirUs(currentSf_, static_cast<uint8_t>(benchTxFrameLen_), preamble));
             journalBudget();
         }
@@ -1089,7 +1144,7 @@ void Node::onTransmitComplete(hal::RadioResult result)
             // An ACK spends airtime like anything else. Same computed figure,
             // same single path through the budget (CLAUDE.md 6) -- and with the
             // preamble this ACK actually carried, which serviceAcks chose.
-            budget_.recordTransmission(activeBand(),
+            budget_.recordTransmission(radioBand_,
                                        link::timeOnAirUs(currentSf_,
                                                          static_cast<uint8_t>(ackTxFrameLen_),
                                                          ackTxPreamble_));
@@ -1104,8 +1159,7 @@ void Node::onTransmitComplete(hal::RadioResult result)
             // Back to the sniff preamble: the next thing we transmit is not an
             // ACK unless serviceAcks says so again, and the receiver we are
             // about to arm must match what our peer sends us.
-            radio_->setPreambleLength(
-                link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs));
+            radio_->setPreambleLength(radioPreamble_);
             radio_->startReceiveDutyCycle(currentSf_ > 10 ? 12 : 8);
         }
         return;
@@ -1146,10 +1200,9 @@ void Node::onTransmitComplete(hal::RadioResult result)
     if (result == hal::RadioResult::Ok) {
         size_t frameLen = 0;
         if (arq_.frameOf(slot, &frameLen) != nullptr && frameLen > 0) {
-            const uint16_t preamble =
-                link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs);
+            const uint16_t preamble = radioPreamble_;
             budget_.recordTransmission(
-                activeBand(),
+                radioBand_,
                 link::timeOnAirUs(currentSf_, static_cast<uint8_t>(frameLen), preamble));
             // "EVT_BUDGET is emitted when the budget changes" -- and this is
             // where it changes (docs/bridge-protocol.md section 4).
@@ -1204,8 +1257,7 @@ void Node::closeAckWindow()
     if (radio_ != nullptr) {
         // Back to the preamble the sniff interval demands, on the receiver as
         // well as the sender -- the peer's next data frame carries it.
-        radio_->setPreambleLength(
-            link::preambleSymbolsForInterval(currentSf_, config_.sniffIntervalMs));
+        radio_->setPreambleLength(radioPreamble_);
         radio_->startReceiveDutyCycle(currentSf_ > 10 ? 12 : 8);
     }
 }
