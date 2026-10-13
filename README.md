@@ -11,7 +11,7 @@ a Web Bluetooth phone bridge (PWA), a native Android client and a server dashboa
   <img src="docs/media/dashboard-radio.png" width="420" alt="Dashboard radio reference: band plan, sniff-interval trade-offs, airtime per frame and the lockout after each frame">
 </p>
 
-<sub>Dashboard with synthetic seed data (`npm run seed`). A photo of the boards follows.</sub>
+<sub>Dashboard with synthetic seed data (`npm run seed`).</sub>
 
 The project was called **MaxlCommunicator** until its first release. Nodes, phones and dashboards
 from before the rename keep working with the new versions: the radio and BLE identifiers did not
@@ -20,6 +20,8 @@ change, and the old environment variable names are still read, with a warning
 
 **`CLAUDE.md` is the normative specification.** Where this README and `CLAUDE.md` disagree,
 `CLAUDE.md` wins.
+
+Built with AI assistance.
 
 ## Why
 
@@ -216,30 +218,22 @@ is never counted as passed.
 **Known issues that matter before anyone relies on it:**
 
 - The ACK return path loses acknowledgements on the bench, which is why gates 2.1 and 2.4 are not
-  passed (#3). The cause is not confirmed on two devices yet.
+  passed ([#3](https://github.com/Juice-de-Orange/trailtalk/issues/3)). The cause is not confirmed on two devices yet.
 - After a receiver reboots, a peer's next few frames (at most 16 counter values) are refused once
   as replays; the sender's retries go through. A message delivered just before a reboot can reach
   the application twice if its ACK was lost, because the (src, seq) dedupe is not persisted.
 
 Fixed in firmware and verified on the host only, not yet on hardware: the duty-cycle budget now
-admits a data frame against the airtime it is actually sent with, sniff preamble included (#1);
-the replay window's high-water mark survives a reboot (#2); a band, power or sniff-interval change
+admits a data frame against the airtime it is actually sent with, sniff preamble included ([#1](https://github.com/Juice-de-Orange/trailtalk/issues/1));
+the replay window's high-water mark survives a reboot ([#2](https://github.com/Juice-de-Orange/trailtalk/issues/2)); a band, power or sniff-interval change
 reaches the radio as soon as it is free, and every frame is charged for the band and preamble it
-was actually sent with (#39); and a factory reset no longer clears the duty-cycle budget (#40).
+was actually sent with ([#39](https://github.com/Juice-de-Orange/trailtalk/issues/39)); and a factory reset no longer clears the duty-cycle budget ([#40](https://github.com/Juice-de-Orange/trailtalk/issues/40)).
 
 ## Contributing
 
 Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Radio behaviour
 changes need a bench test with two devices before they count as done. Security problems: see
 [SECURITY.md](SECURITY.md).
-
-## Built with Claude Code
-
-Most of this project was written in pair-programming sessions with
-[Claude Code](https://claude.com/claude-code), Anthropic's coding agent: the specification review,
-firmware, bridge, dashboard, Android client, tests and the hardware bring-up tooling. Hardware
-decisions, measurements on the bench and review are the maintainer's. [`CLAUDE.md`](CLAUDE.md) is
-the specification the agent works against.
 
 ## License
 
