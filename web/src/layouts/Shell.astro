@@ -26,6 +26,9 @@ const nav = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title} — trailtalk</title>
+    <!-- The PWA's icon, served from the same origin under /app/. Without a link
+         every browser asks for /favicon.ico, which does not exist. -->
+    <link rel="icon" href="/app/icon.svg" type="image/svg+xml" />
   </head>
   <body class="min-h-screen bg-plane text-ink antialiased">
     <header class="border-b border-hairline bg-surface">
