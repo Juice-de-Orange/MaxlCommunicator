@@ -5,6 +5,30 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-13
+
+A patch release for the dashboard and the PWA bridge. The firmware, the radio protocol, the BLE
+interface and the Android client are unchanged; the firmware version stays 0.1.0.
+
+### Fixed
+
+- Dashboard: sign-in answered 403 "Cross-site POST form submissions are forbidden" whenever the
+  dashboard was opened on any `WEB_PORT` other than 4321, and on `http://127.0.0.1:4321`. Without
+  `DASHBOARD_HOST`, the login form now accepts `http://localhost:<WEB_PORT>` and
+  `http://127.0.0.1:<WEB_PORT>`. `WEB_PORT` is built into the server like `DASHBOARD_HOST`: after
+  changing it, `docker compose up -d --build`; a container started with another `WEB_PORT` than
+  its image was built for says so and exits (#49).
+- Dashboard: the pages link the PWA's icon as their favicon instead of leaving the browser to ask
+  for a `/favicon.ico` that does not exist (#49).
+
+### Changed
+
+- Dependencies: vite 8 for the PWA bridge (#33), `@astrojs/react` 7 (#35), `@types/node` 26 in
+  `bridge/` and `web/` (#34, #36), and the minor and patch group — astro 7.3.8,
+  `@astrojs/node` 11.1.7, drizzle-orm 0.45.4, jsdom 30.1.2 (#44).
+- CI runs the production builds of the PWA and the dashboard (#47) and builds the dashboard image
+  on every pull request (#48), so a bundler major can no longer pass CI and break the image.
+
 ## [0.1.0] - 2026-10-12
 
 The first public release, and the first under the name trailtalk: the project was called
