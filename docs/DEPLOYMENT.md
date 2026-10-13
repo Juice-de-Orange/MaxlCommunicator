@@ -20,9 +20,12 @@ Set at least:
 | `POSTGRES_PASSWORD` | The database password; compose refuses to start without it. Use the same value in `DATABASE_URL` if you run tools from the host. |
 | `DASHBOARD_PASSWORD` | The single dashboard login (`openssl rand -base64 24`). |
 | `SESSION_SECRET` | Signs the session cookie (`openssl rand -hex 32`). |
-| `DASHBOARD_HOST` | The public host name the reverse proxy of step 3 serves, e.g. `trailtalk.example.com` (with the port if it is not 443: `trailtalk.example.com:8443`). **Required behind a TLS proxy** — without it the login form answers 403. Leave it empty if the dashboard is only ever opened as `http://localhost:4321`. |
+| `DASHBOARD_HOST` | The public host name the reverse proxy of step 3 serves, e.g. `trailtalk.example.com` (with the port if it is not 443: `trailtalk.example.com:8443`). **Required behind a TLS proxy** — without it the login form answers 403. Leave it empty if the dashboard is only ever opened on the host itself, as `http://localhost:<WEB_PORT>` or `http://127.0.0.1:<WEB_PORT>`. |
 
 `WEB_PORT` (default 4321) and `POSTGRES_PORT` (default 5433) are the loopback ports on the host.
+While `DASHBOARD_HOST` is empty, `WEB_PORT` is also the port the login form accepts, and like
+`DASHBOARD_HOST` it is built into the server: after changing it, `docker compose up -d --build`
+(a container started with another `WEB_PORT` than its image was built for says so and exits).
 
 `DATABASE_URL` in `.env` is only read by tools run from the host (`npm run db:migrate`, the
 `device:*` scripts); the container gets its own from compose. The test suite does not run in that

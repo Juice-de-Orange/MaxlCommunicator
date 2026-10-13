@@ -79,12 +79,14 @@ COPY bridge/ /src/bridge/
 COPY web/ ./
 # The PWA lands under /app/ on the finished server.
 COPY --from=bridge-build /src/bridge/dist ./public/app
-# The public host name behind the TLS proxy (docs/DEPLOYMENT.md). Astro writes
-# it into the server at build time -- it is what the cross-site check compares
-# the browser's Origin with -- so it is a build argument, declared this late so
-# that changing it does not invalidate the `npm ci` layer above.
+# The public host name behind the TLS proxy (docs/DEPLOYMENT.md), and without one
+# the port the dashboard is published on. Astro writes them into the server at
+# build time -- they are what the cross-site check compares the browser's Origin
+# with -- so they are build arguments, declared this late so that changing them
+# does not invalidate the `npm ci` layer above.
 ARG DASHBOARD_HOST=""
-RUN DASHBOARD_HOST="$DASHBOARD_HOST" npm run build
+ARG WEB_PORT=""
+RUN DASHBOARD_HOST="$DASHBOARD_HOST" WEB_PORT="$WEB_PORT" npm run build
 
 # Reduce the very same tree to what the server needs, rather than installing a
 # second one in the runtime stage.
@@ -114,9 +116,10 @@ COPY web/docker-entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
 
 # What the server above was built for, so the entrypoint can tell a changed
-# DASHBOARD_HOST from one that is in effect.
+# DASHBOARD_HOST or WEB_PORT from one that is in effect.
 ARG DASHBOARD_HOST=""
-ENV TRAILTALK_BUILT_FOR_HOST=$DASHBOARD_HOST
+ARG WEB_PORT=""
+ENV TRAILTALK_BUILT_FOR_HOST=$DASHBOARD_HOST TRAILTALK_BUILT_FOR_WEB_PORT=$WEB_PORT
 
 # Never root. The process needs to read its own files and nothing else.
 USER node
