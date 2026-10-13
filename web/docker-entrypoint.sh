@@ -20,6 +20,15 @@ if [ -n "${DASHBOARD_HOST:-}" ] && [ "${DASHBOARD_HOST}" != "${TRAILTALK_BUILT_F
   exit 1
 fi
 
+# The same for WEB_PORT while DASHBOARD_HOST is empty: the published port is the
+# origin the login form accepts, and it is compiled in. An image built without
+# one (plain `docker build`) was built for 4321.
+if [ -z "${DASHBOARD_HOST:-}" ] && [ -n "${WEB_PORT:-}" ] && [ "${WEB_PORT}" != "${TRAILTALK_BUILT_FOR_WEB_PORT:-4321}" ]; then
+  echo "WEB_PORT is '${WEB_PORT}', but this image was built for '${TRAILTALK_BUILT_FOR_WEB_PORT:-4321}'." >&2
+  echo "Rebuild it: docker compose up -d --build" >&2
+  exit 1
+fi
+
 # The compose project name falls back to `maxl`, the name from before the rename
 # to trailtalk, so that an installation whose .env predates it keeps its data
 # volume (docker-compose.yml). Nothing is wrong; say it once per start so it is

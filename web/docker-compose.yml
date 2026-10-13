@@ -56,6 +56,9 @@ services:
         # The public host name behind the TLS proxy. Built into the server, so
         # a change needs `docker compose up -d --build` (docs/DEPLOYMENT.md 3).
         DASHBOARD_HOST: ${DASHBOARD_HOST:-}
+        # Without DASHBOARD_HOST, the port the browser opens the dashboard on
+        # (`ports:` below) is the origin the login form accepts. Built in too.
+        WEB_PORT: ${WEB_PORT:-4321}
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-maxl}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-maxl}
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?set DASHBOARD_PASSWORD in .env}
@@ -63,6 +66,7 @@ services:
       # Only so the entrypoint can refuse to start an image built for another
       # host; the value that counts is the build argument above.
       DASHBOARD_HOST: ${DASHBOARD_HOST:-}
+      WEB_PORT: ${WEB_PORT:-4321}
       # Only so the entrypoint can say that this runs under the pre-rename
       # project name (see `name:` above).
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}

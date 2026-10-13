@@ -10,13 +10,14 @@ import { loadEnv } from "vite";
 import { allowedDomainsFor } from "./src/lib/public-host.mjs";
 
 /*
- * The one setting here that comes from the environment, and it is read when the
- * server is BUILT: Astro writes `security.allowedDomains` into the server's
- * manifest. The container build gets it as a build argument (docker-compose.yml);
+ * The two settings here that come from the environment, and they are read when
+ * the server is BUILT: Astro writes `security.allowedDomains` into the server's
+ * manifest. The container build gets them as build arguments (docker-compose.yml);
  * a local `npm run build` reads `web/.env`, where a variable already set in the
- * environment wins, as everywhere else in this package.
+ * environment wins, as everywhere else in this package. `WEB_PORT` only counts
+ * while `DASHBOARD_HOST` is empty (src/lib/public-host.mjs).
  */
-const { DASHBOARD_HOST } = loadEnv("production", process.cwd(), "");
+const { DASHBOARD_HOST, WEB_PORT } = loadEnv("production", process.cwd(), "");
 
 /*
  * SSR on the Node adapter, standalone: the dashboard reads a live database on
@@ -35,7 +36,7 @@ export default defineConfig({
   security: {
     // `checkOrigin` stays at its default, on. See src/lib/public-host.mjs for
     // why the public host has to be named for it to work behind a TLS proxy.
-    allowedDomains: allowedDomainsFor(DASHBOARD_HOST),
+    allowedDomains: allowedDomainsFor(DASHBOARD_HOST, WEB_PORT),
   },
   vite: {
     plugins: [tailwind()],

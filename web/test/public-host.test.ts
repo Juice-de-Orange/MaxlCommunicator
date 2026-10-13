@@ -28,9 +28,10 @@ describe("DASHBOARD_HOST", () => {
     ]);
   });
 
-  it("trusts nothing when unset, which is right for http://localhost", () => {
-    expect(allowedDomainsFor(undefined)).toEqual([]);
-    expect(allowedDomainsFor("  ")).toEqual([]);
+  it("ignores WEB_PORT once a public host is named", () => {
+    expect(allowedDomainsFor("trailtalk.example.com", "8080")).toEqual([
+      { protocol: "https", hostname: "trailtalk.example.com" },
+    ]);
   });
 
   it.each(["trailtalk.example.com/dashboard", "ftp://trailtalk.example.com", "user@trailtalk.example.com", "not a host"])(
@@ -39,6 +40,42 @@ describe("DASHBOARD_HOST", () => {
       expect(() => allowedDomainsFor(value)).toThrow(/DASHBOARD_HOST/);
     },
   );
+});
+
+/*
+ * Without DASHBOARD_HOST. Astro then believes the `Host` header for nothing and
+ * compares the browser's `Origin` with `http://localhost:4321` -- the port the
+ * server listens on inside the container, not the one WEB_PORT publishes. A
+ * dashboard on any other port, and `http://127.0.0.1:4321` too, answered every
+ * sign-in with 403 "Cross-site POST form submissions are forbidden".
+ */
+describe("WEB_PORT, while DASHBOARD_HOST is unset", () => {
+  it("accepts localhost and 127.0.0.1 on the default port", () => {
+    const expected = [
+      { protocol: "http", hostname: "localhost", port: "4321" },
+      { protocol: "http", hostname: "127.0.0.1", port: "4321" },
+    ];
+    expect(allowedDomainsFor(undefined)).toEqual(expected);
+    expect(allowedDomainsFor("  ", "")).toEqual(expected);
+  });
+
+  it("accepts both on the port the dashboard is published on", () => {
+    expect(allowedDomainsFor("", "8080")).toEqual([
+      { protocol: "http", hostname: "localhost", port: "8080" },
+      { protocol: "http", hostname: "127.0.0.1", port: "8080" },
+    ]);
+  });
+
+  it("drops port 80, which a pattern could never match", () => {
+    expect(allowedDomainsFor("", "80")).toEqual([
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "http", hostname: "127.0.0.1" },
+    ]);
+  });
+
+  it.each(["http", "0", "65536", "80a", "4321/"])("refuses WEB_PORT=%s at build time", (port) => {
+    expect(() => allowedDomainsFor("", port)).toThrow(/WEB_PORT/);
+  });
 });
 
 describe("astro.config.mjs", () => {
