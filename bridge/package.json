@@ -1,6 +1,6 @@
 {
   "name": "trailtalk-bridge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Phone bridge for the trailtalk LoRa node. An implementation of docs/bridge-protocol.md, which is normative and client-independent.",
