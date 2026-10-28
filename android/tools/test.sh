@@ -28,7 +28,7 @@ for old in MAXL_GRADLE_IMAGE MAXL_GRADLE_CACHE; do
         fi
     fi
 done
-IMAGE="${TRAILTALK_GRADLE_IMAGE:-${MAXL_GRADLE_IMAGE:-gradle:8.5-jdk21}}"
+IMAGE="${TRAILTALK_GRADLE_IMAGE:-${MAXL_GRADLE_IMAGE:-gradle:8.7-jdk21}}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TASK="${1:-:protocol:test}"
 
