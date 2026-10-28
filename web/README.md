@@ -8,7 +8,7 @@ bridge from `bridge/`, because Web Bluetooth needs a secure context. How to run 
 ## Stack — pinned, not floating
 
 - **Astro 7 SSR + React 19 islands + Tailwind v4 + drizzle-orm 0.45.x + PostgreSQL 17**
-- **Node 22 LTS** (Astro 7 requires ≥ 22)
+- **Node 22 LTS, 22.23.4 or newer** (Astro 7.4.2 refuses older Node versions)
 - Tailwind v4 is CSS-first: Vite plugin, **no** `tailwind.config.js`
 - Astro 7 removed the CLI commands `astro db`, `login`, `link` and `init`
 - drizzle-orm deliberately on 0.45.x — the 1.0 line is still in beta
