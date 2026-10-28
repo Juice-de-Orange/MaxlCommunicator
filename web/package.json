@@ -26,10 +26,10 @@
     "build:all": "npm run build:pwa && npm run build"
   },
   "dependencies": {
-    "@astrojs/node": "11.1.8",
-    "@astrojs/react": "7.1.0",
+    "@astrojs/node": "11.1.9",
+    "@astrojs/react": "7.1.1",
     "@tailwindcss/vite": "4.3.3",
-    "astro": "7.4.0",
+    "astro": "7.4.2",
     "drizzle-orm": "0.45.4",
     "postgres": "3.4.9",
     "react": "19.3.1",
@@ -38,7 +38,7 @@
     "tsx": "4.23.15"
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.10",
+    "@astrojs/check": "0.9.12",
     "@types/node": "^26.6.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
