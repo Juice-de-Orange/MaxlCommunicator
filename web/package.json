@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Management dashboard for the trailtalk LoRa network. Append-only event log; all state is a projection.",
   "engines": {
-    "node": ">=22 <23"
+    "node": ">=22.23.4 <23"
   },
   "scripts": {
     "dev": "astro dev",
