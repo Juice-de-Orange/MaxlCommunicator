@@ -86,13 +86,15 @@ function linkSeries(pick: (row: (typeof links)[number]) => number | null): Serie
     .filter((series) => series.points.length > 0);
 }
 
+// `x as number`, not `x!`: @astrojs/language-server 2.17 reads `x! / 1000` in
+// frontmatter as the start of a regex and fails `astro check` on the whole page.
 const batterySeries: Series[] = [
   {
     name: node.name,
     color: "--color-series-1",
     points: samples
       .filter((s) => s.batteryMv !== null)
-      .map((s) => ({ x: s.occurredAt.getTime(), y: s.batteryMv! / 1000 })),
+      .map((s) => ({ x: s.occurredAt.getTime(), y: (s.batteryMv as number) / 1000 })),
   },
 ];
 
@@ -101,7 +103,7 @@ const budgetSeries: Series[] = [
   {
     name: "airtime used",
     color: "--color-series-1",
-    points: budgetSamples.map((s) => ({ x: s.occurredAt.getTime(), y: s.budgetUsedMs! / 1000 })),
+    points: budgetSamples.map((s) => ({ x: s.occurredAt.getTime(), y: (s.budgetUsedMs as number) / 1000 })),
   },
 ];
 const budgetLimitS = (budgetSamples.at(-1)?.budgetLimitMs ?? 360_000) / 1000;
